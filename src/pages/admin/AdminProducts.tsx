@@ -274,27 +274,20 @@ const AdminProducts = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6  h-16">
-        <h1 className="font-serif text-3xl text-logo-black">Products</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <h1 className="font-serif text-2xl md:text-3xl text-logo-black">Products</h1>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => {
             setEditingProduct(null);
-            setFormData({
-              name: '',
-              description: '',
-              price: '',
-              category_id: '',
-              image_url: '',
-              stock: '',
-            });
+            setFormData({ name: '', description: '', price: '', category_id: '', image_url: '', stock: '' });
             setSelectedFiles([]);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-action-bordeaux text-white rounded-xl font-medium hover:bg-logo-black transition-colors"
+          className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-action-bordeaux text-white rounded-xl font-medium text-sm hover:bg-logo-black transition-colors"
         >
-          <FiPlus size={20} />
+          <FiPlus size={18} />
           Add Product
         </motion.button>
       </div>
@@ -335,109 +328,103 @@ const AdminProducts = () => {
           </div>
         ) : (
           <>
-          <table className="w-full">
-            <thead className="bg-bg-silk-glow">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Product</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Price</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Stock</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Category</th>
-                <th className="px-6 py-4 text-right text-sm font-semibold text-logo-black">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+            {/* Desktop Table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-bg-silk-glow">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Product</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Price</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Stock</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Category</th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-logo-black">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredProducts.map((product) => {
+                    const category = categories.find((c) => c.id === product.category_id);
+                    return (
+                      <tr key={product.id} className="border-t border-logo-rose/10 hover:bg-logo-rose/5">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            {product.image_url ? (
+                              <img src={product.image_url} alt={product.name} className="w-12 h-12 object-cover rounded-lg" />
+                            ) : (
+                              <div className="w-12 h-12 bg-bg-silk-glow rounded-lg flex items-center justify-center"><FiImage className="text-logo-black/40" size={20} /></div>
+                            )}
+                            <div>
+                              <p className="font-medium text-logo-black">{product.name}</p>
+                              <p className="text-sm text-logo-black/60 truncate max-w-xs">{product.description || '-'}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-medium text-logo-black">${product.price.toFixed(2)}</td>
+                        <td className="px-6 py-4 text-logo-black/60">{product.stock}</td>
+                        <td className="px-6 py-4 text-logo-black/60">{category?.name || '-'}</td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => handleEdit(product)} className="p-2 text-logo-rose hover:bg-logo-rose/10 rounded-lg transition-colors"><FiEdit2 size={18} /></button>
+                            <button onClick={() => handleDelete(product.id)} className="p-2 text-logo-rose hover:bg-logo-rose/10 rounded-lg transition-colors"><FiTrash2 size={18} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card Layout */}
+            <div className="md:hidden divide-y divide-logo-rose/10">
               {filteredProducts.map((product) => {
                 const category = categories.find((c) => c.id === product.category_id);
                 return (
-                  <tr key={product.id} className="border-t border-logo-rose/10 hover:bg-logo-rose/5">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {product.image_url ? (
-                          <img
-                            src={product.image_url}
-                            alt={product.name}
-                            className="w-12 h-12 object-cover rounded-lg"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 bg-bg-silk-glow rounded-lg flex items-center justify-center">
-                            <FiImage className="text-logo-black/40" size={20} />
-                          </div>
-                        )}
-                        <div>
-                          <p className="font-medium text-logo-black">{product.name}</p>
-                          <p className="text-sm text-logo-black/60 truncate max-w-xs">
-                            {product.description || '-'}
-                          </p>
-                        </div>
+                  <div key={product.id} className="p-4 flex items-start gap-3">
+                    {product.image_url ? (
+                      <img src={product.image_url} alt={product.name} className="w-16 h-16 object-cover rounded-xl shrink-0" />
+                    ) : (
+                      <div className="w-16 h-16 bg-bg-silk-glow rounded-xl flex items-center justify-center shrink-0"><FiImage className="text-logo-black/40" size={20} /></div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-logo-black truncate">{product.name}</p>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        <span className="text-xs font-medium text-action-bordeaux">${product.price.toFixed(2)}</span>
+                        <span className="text-xs text-logo-black/50">Stock: {product.stock}</span>
+                        {category && <span className="text-xs bg-logo-rose/10 text-logo-rose px-2 py-0.5 rounded-full">{category.name}</span>}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 font-medium text-logo-black">
-                      ${product.price.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 text-logo-black/60">{product.stock}</td>
-                    <td className="px-6 py-4 text-logo-black/60">
-                      {category?.name || '-'}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(product)}
-                          className="p-2 text-logo-rose hover:bg-logo-rose/10 rounded-lg transition-colors"
-                        >
-                          <FiEdit2 size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="p-2 text-logo-rose hover:bg-logo-rose/10 rounded-lg transition-colors"
-                        >
-                          <FiTrash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
+                      {product.description && <p className="text-xs text-logo-black/50 mt-1 line-clamp-2">{product.description}</p>}
+                    </div>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <button onClick={() => handleEdit(product)} className="p-2 text-logo-rose hover:bg-logo-rose/10 rounded-lg transition-colors"><FiEdit2 size={16} /></button>
+                      <button onClick={() => handleDelete(product.id)} className="p-2 text-logo-rose hover:bg-logo-rose/10 rounded-lg transition-colors"><FiTrash2 size={16} /></button>
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-          
-          {/* Pagination */}
-          {totalCount > itemsPerPage && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-logo-rose/10">
-              <p className="text-sm text-logo-black/60">
-                Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} products
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 text-sm border border-logo-rose/20 rounded-lg hover:bg-logo-rose/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Previous
-                </button>
-                <span className="px-3 py-1.5 text-sm font-medium text-logo-black">
-                  {currentPage} of {Math.ceil(totalCount / itemsPerPage)}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalCount / itemsPerPage), prev + 1))}
-                  disabled={currentPage === Math.ceil(totalCount / itemsPerPage)}
-                  className="px-3 py-1.5 text-sm border border-logo-rose/20 rounded-lg hover:bg-logo-rose/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Next
-                </button>
-              </div>
             </div>
-          )}
+
+            {/* Pagination */}
+            {totalCount > itemsPerPage && (
+              <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-6 py-4 border-t border-logo-rose/10">
+                <p className="text-xs md:text-sm text-logo-black/60">Showing {((currentPage - 1) * itemsPerPage) + 1}–{Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} products</p>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="px-3 py-1.5 text-sm border border-logo-rose/20 rounded-lg hover:bg-logo-rose/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Previous</button>
+                  <span className="px-3 py-1.5 text-sm font-medium text-logo-black">{currentPage} / {Math.ceil(totalCount / itemsPerPage)}</span>
+                  <button onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalCount / itemsPerPage), prev + 1))} disabled={currentPage === Math.ceil(totalCount / itemsPerPage)} className="px-3 py-1.5 text-sm border border-logo-rose/20 rounded-lg hover:bg-logo-rose/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Next</button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </motion.div>
 
-      {/* Modal */}
+      {/* Modal — slides up from bottom on mobile */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-2xl p-6 w-full max-w-lg m-4"
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="bg-white rounded-t-2xl sm:rounded-2xl p-5 md:p-6 w-full sm:max-w-lg max-h-[90vh] overflow-y-auto"
           >
             <h2 className="font-serif text-2xl text-logo-black mb-4">
               {editingProduct ? 'Edit Product' : 'Add Product'}

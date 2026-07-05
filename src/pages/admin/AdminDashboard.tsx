@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FiUsers, FiShoppingBag, FiDollarSign, FiBox, FiTrendingUp, FiLogOut, FiSettings } from 'react-icons/fi';
+import { FiUsers, FiShoppingBag, FiDollarSign, FiBox, FiTrendingUp, FiLogOut, FiSettings, FiMenu } from 'react-icons/fi';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../utils/supabase';
@@ -9,6 +9,7 @@ const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalProducts: 0,
@@ -73,9 +74,19 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-bg-silk-glow flex">
+    <div className="min-h-screen bg-bg-silk-glow flex flex-col md:flex-row relative">
+      {/* Mobile Backdrop */}
+      {isSidebarOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-xs z-20 transition-opacity duration-300"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className="bg-white shadow-xl h-full z-30 overflow-hidden border-r border-logo-rose/20 w-72 flex-shrink-0">
+      <aside className={`bg-white shadow-xl z-30 border-r border-logo-rose/20 w-72 flex-shrink-0 transition-transform duration-300 fixed md:sticky top-0 bottom-0 left-0 h-screen md:translate-x-0 ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
         <div className="h-full flex flex-col">
           {/* Logo/Brand */}
           <div className="p-4 border-b border-logo-rose/20">
@@ -83,7 +94,7 @@ const AdminDashboard = () => {
               <img 
                 src="/logo_header.avif" 
                 alt="Data Garments" 
-                className="w-16 h-10 md:w-80 md:h-20 object-contain"
+                className="w-48 h-12 object-contain mx-auto"
               />
             </div>
           </div>
@@ -97,6 +108,7 @@ const AdminDashboard = () => {
                 <Link
                   key={item.path}
                   to={item.path}
+                  onClick={() => setIsSidebarOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all duration-200 ${
                     isActive
                       ? 'bg-action-bordeaux text-white'
@@ -129,6 +141,13 @@ const AdminDashboard = () => {
         <header className="bg-white shadow-sm sticky top-0 z-20 border-b border-logo-rose/20">
           <div className="flex items-center justify-between px-4 md:px-6 py-0 h-16 md:h-20">
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="md:hidden p-2 text-logo-black hover:text-logo-rose hover:bg-logo-rose/10 rounded-xl transition-colors cursor-pointer"
+                aria-label="Open sidebar"
+              >
+                <FiMenu size={22} />
+              </button>
               <h1 className="font-serif text-lg md:text-xl font-bold text-logo-black">Admin Panel</h1>
             </div>
             <div className="flex items-center gap-2 md:gap-4">

@@ -51,19 +51,14 @@ const AdminSales = () => {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6  h-16">
-        <h1 className="font-serif text-3xl text-logo-black">Sales & Revenue</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <h1 className="font-serif text-2xl md:text-3xl text-logo-black">Sales &amp; Revenue</h1>
         <div className="flex items-center gap-2">
           <FiCalendar className="text-logo-black/40" size={20} />
-          <select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value as any)}
-            className="px-4 py-2 border border-logo-rose/20 rounded-xl focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20"
-          >
+          <select value={selectedPeriod} onChange={(e) => setSelectedPeriod(e.target.value as any)}
+            className="px-3 py-1.5 md:px-4 md:py-2 text-sm border border-logo-rose/20 rounded-xl focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20">
             {periodOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
+              <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
         </div>
