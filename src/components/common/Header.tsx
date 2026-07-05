@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiShoppingBag, FiX, FiMenu, FiUser, FiLogOut, FiSettings } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
@@ -75,7 +76,7 @@ const Header = () => {
             <motion.img
               src="/logo_header.avif"
               alt="Data Garments"
-              className="h-9 md:h-9 w-[135px] max-w-full object-fill"
+              className="h-8 md:h-9 w-[115px] md:w-[135px] max-w-full object-fill"
               whileHover={{ scale: 1.00 }}
               transition={{ duration: 0.2 }}
               loading="eager"
@@ -83,22 +84,22 @@ const Header = () => {
           </Link>
 
           {/* Right Side Buttons & Links */}
-          <div className="flex items-center gap-2 md:gap-6">
+          <div className="flex items-center gap-1 md:gap-6">
              {/* Action Buttons */}
-            <div className="flex items-center gap-1.5 md:gap-4">
+            <div className="flex items-center gap-1 md:gap-4">
               {/* Search Section (Inline Flow) */}
               <div
                 onClick={() => {
                   if (!isSearchOpen) setIsSearchOpen(true);
                 }}
-                className={`flex items-center h-8 md:h-9 rounded-full overflow-hidden border transition-all duration-300 ease-in-out px-2 md:px-3 ${
+                className={`flex items-center h-10 md:h-9 rounded-full overflow-hidden border transition-all duration-300 ease-in-out px-2.5 md:px-3 ${
                   isSearchOpen
-                    ? 'w-[200px] xs:w-[240px] md:w-[320px] bg-bg-silk-glow border-logo-rose/30 cursor-default'
-                    : 'w-8 md:w-9 bg-transparent border-transparent hover:bg-logo-rose/10 cursor-pointer justify-center px-0!'
+                    ? 'w-[110px] xs:w-[150px] sm:w-[200px] md:w-[320px] bg-bg-silk-glow border-logo-rose/30 cursor-default'
+                    : 'w-10 md:w-9 bg-transparent border-transparent hover:bg-logo-rose/10 cursor-pointer justify-center px-0!'
                 }`}
               >
                 <div className="flex items-center justify-end w-full h-full gap-1.5 md:gap-1">
-                  <FiSearch className={`w-5 h-5 shrink-0 transition-colors duration-200 ${isSearchOpen ? 'text-logo-black/50 w-4 h-4 md:w-5 md:h-5' : 'text-logo-black'}`} />
+                  <FiSearch className={`w-6 h-6 md:w-5 md:h-5 shrink-0 transition-colors duration-200 ${isSearchOpen ? 'text-logo-black/50 w-4 h-4 md:w-5 md:h-5' : 'text-logo-black'}`} />
                   
                   {isSearchOpen && (
                     <input
@@ -129,12 +130,12 @@ const Header = () => {
               {/* Cart Button - Only show when authenticated */}
               {isAuthenticated && (
                 <motion.button
-                  className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-logo-black hover:text-logo-rose hover:bg-logo-rose/10 rounded-full transition-colors duration-200 cursor-pointer relative"
+                  className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center text-logo-black hover:text-logo-rose hover:bg-logo-rose/10 rounded-full transition-colors duration-200 cursor-pointer relative"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
                   aria-label="Cart"
                 >
-                  <FiShoppingBag className="w-5 h-5 md:w-6 md:h-6" />
+                  <FiShoppingBag className="w-6 h-6 md:w-6 md:h-6" />
                   <span className="absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 bg-pop-orchid text-white text-[10px] md:text-xs w-4 h-4 md:w-5 md:h-5 rounded-full flex items-center justify-center font-sans">
                     0
                   </span>
@@ -146,7 +147,7 @@ const Header = () => {
                 <div className="relative" ref={profileDropdownRef}>
                   <motion.button
                     onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                    className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-logo-black hover:text-logo-rose hover:bg-logo-rose/10 rounded-full transition-colors duration-200 cursor-pointer relative overflow-hidden"
+                    className="w-10 h-10 md:w-10 md:h-10 flex items-center justify-center text-logo-black hover:text-logo-rose hover:bg-logo-rose/10 rounded-full transition-colors duration-200 cursor-pointer relative overflow-hidden"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                     aria-label="Profile"
@@ -159,35 +160,41 @@ const Header = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <FiUser className="w-5 h-5 md:w-6 md:h-6" />
+                      <FiUser className="w-6 h-6 md:w-6 md:h-6" />
                     )}
                   </motion.button>
 
                   {/* Profile Dropdown */}
                   <AnimatePresence>
                     {isProfileDropdownOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        className="absolute right-0 top-12 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-logo-rose/20 overflow-hidden z-50"
-                      >
-                        <div className="p-3 border-b border-logo-rose/10">
+                      <>
+                        {/* Mobile backdrop */}
+                        <div 
+                          className="md:hidden fixed inset-0 bg-black/20 z-40"
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                        />
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          transition={{ duration: 0.2 }}
+                          className="fixed right-2 md:right-6 top-16 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-logo-rose/20 overflow-hidden z-[9999]"
+                        >
+                        <div className="p-4 border-b border-logo-rose/10 bg-bg-silk-glow/30">
                           <div className="flex items-center gap-3">
                             {user?.profilePicUrl ? (
                               <img
                                 src={user.profilePicUrl}
                                 alt={user.username}
-                                className="w-10 h-10 rounded-full object-cover"
+                                className="w-12 h-12 rounded-full object-cover ring-2 ring-logo-rose/20"
                               />
                             ) : (
-                              <div className="w-10 h-10 rounded-full bg-logo-rose/20 flex items-center justify-center">
-                                <FiUser className="text-logo-rose" size={20} />
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-logo-rose to-action-bordeaux flex items-center justify-center ring-2 ring-logo-rose/20">
+                                <FiUser className="text-white" size={24} />
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
-                              <p className="font-sans text-sm font-medium text-logo-black truncate">
+                              <p className="font-sans text-sm font-semibold text-logo-black truncate">
                                 {user?.username}
                               </p>
                               <p className="font-sans text-xs text-logo-black/60 truncate">
@@ -196,37 +203,39 @@ const Header = () => {
                             </div>
                           </div>
                         </div>
-                        <div className="p-2">
+                        <div className="p-2 space-y-1">
                           {user?.role === 'Admin' && (
                             <Link
                               to="/admin/dashboard"
                               onClick={() => setIsProfileDropdownOpen(false)}
-                              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-logo-rose/5 text-logo-black hover:text-logo-rose transition-colors duration-200 cursor-pointer"
+                              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-logo-rose/5 text-logo-black hover:text-logo-rose transition-all duration-200 cursor-pointer group"
                             >
-                              <FiSettings size={18} />
-                              <span className="font-sans text-sm">Admin Dashboard</span>
+                              <FiSettings size={18} className="group-hover:scale-110 transition-transform" />
+                              <span className="font-sans text-sm font-medium">Admin Dashboard</span>
                             </Link>
                           )}
                           <Link
                             to="/profile-settings"
                             onClick={() => setIsProfileDropdownOpen(false)}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-logo-rose/5 text-logo-black hover:text-logo-rose transition-colors duration-200 cursor-pointer"
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-logo-rose/5 text-logo-black hover:text-logo-rose transition-all duration-200 cursor-pointer group"
                           >
-                            <FiSettings size={18} />
-                            <span className="font-sans text-sm">Profile Settings</span>
+                            <FiSettings size={18} className="group-hover:scale-110 transition-transform" />
+                            <span className="font-sans text-sm font-medium">Profile Settings</span>
                           </Link>
+                          <div className="border-t border-logo-rose/10 my-1"></div>
                           <button
                             onClick={() => {
                               handleLogout();
                               setIsProfileDropdownOpen(false);
                             }}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-50 text-logo-black hover:text-red-600 transition-colors duration-200 cursor-pointer"
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-logo-black hover:text-red-600 transition-all duration-200 cursor-pointer group"
                           >
-                            <FiLogOut size={18} />
-                            <span className="font-sans text-sm">Logout</span>
+                            <FiLogOut size={18} className="group-hover:scale-110 transition-transform" />
+                            <span className="font-sans text-sm font-medium">Logout</span>
                           </button>
                         </div>
                       </motion.div>
+                      </>
                     )}
                   </AnimatePresence>
                 </div>
@@ -236,13 +245,13 @@ const Header = () => {
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden w-8 h-8 flex items-center justify-center text-logo-black hover:text-logo-rose hover:bg-logo-rose/10 rounded-full transition-colors duration-200 cursor-pointer"
+                className="md:hidden w-10 h-10 flex items-center justify-center text-logo-black hover:text-logo-rose hover:bg-logo-rose/10 rounded-full transition-colors duration-200 cursor-pointer"
                 aria-label="Toggle menu"
               >
                 {isMobileMenuOpen ? (
-                  <FiX className="w-5 h-5" />
+                  <FiX className="w-6 h-6" />
                 ) : (
-                  <FiMenu className="w-5 h-5" />
+                  <FiMenu className="w-6 h-6" />
                 )}
               </button>
             </div>
@@ -284,86 +293,124 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile Menu Drawer */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="md:hidden w-full bg-white/95 backdrop-blur-xl border-t border-logo-rose/10 overflow-hidden"
-          >
-            <div className="flex flex-col px-4 py-4 gap-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="font-sans text-logo-black hover:text-logo-rose transition-colors duration-200 text-lg py-2 border-b border-logo-rose/5"
-                >
-                  {link.name}
-                </Link>
-              ))}
-              {/* Mobile Auth Links */}
-              <div className="flex flex-col gap-3 pt-2">
-                {!isAuthenticated ? (
-                  <>
-                    <Link
-                      to="/login"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="font-sans text-logo-black hover:text-logo-rose transition-colors duration-200 text-lg py-2"
-                    >
-                      Login
-                    </Link>
-                    <Link
-                      to="/signup"
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="font-sans text-action-bordeaux hover:bg-action-bordeaux/10 text-center py-3 rounded-full transition-all duration-200 font-medium"
-                    >
-                      Sign Up
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3 py-2 px-3 bg-bg-silk-glow/50 rounded-lg">
-                      {user?.profilePicUrl ? (
-                        <img
-                          src={user.profilePicUrl}
-                          alt={user.username}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-logo-rose/20 flex items-center justify-center">
-                          <FiUser className="text-logo-rose" size={20} />
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-sans text-sm font-medium text-logo-black">
-                          {user?.username}
-                        </p>
-                        <p className="font-sans text-xs text-logo-black/60">
-                          {user?.email}
-                        </p>
-                      </div>
-                    </div>
+      {/* Mobile Menu Drawer (using Portal to escape header's transform context) */}
+      {createPortal(
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <>
+              {/* Backdrop with smooth fade */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]"
+                onClick={() => setIsMobileMenuOpen(false)}
+              />
+              {/* Dropdown Menu Container (Auto-height, no empty space) */}
+              <motion.div
+                initial={{ y: '-100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '-100%' }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="md:hidden fixed top-0 left-0 right-0 w-full bg-white/95 backdrop-blur-2xl shadow-[0_15px_40px_rgba(99,6,32,0.1)] z-[101] overflow-hidden rounded-b-[2rem] border-b border-logo-rose/10 flex flex-col"
+              >
+                <div className="flex flex-col p-5 pb-6 space-y-5 overflow-y-auto max-h-[80vh]">
+                  {/* Top Bar */}
+                  <div className="flex items-center justify-between border-b border-logo-rose/10 pb-3">
+                    <span className="font-serif text-lg font-bold tracking-wide text-logo-black">Menu</span>
                     <button
-                      onClick={() => {
-                        handleLogout();
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className="font-sans text-logo-black hover:text-logo-rose transition-colors duration-200 text-lg py-2 flex items-center gap-2"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="p-1.5 text-logo-black hover:text-logo-rose hover:bg-logo-rose/10 rounded-full transition-colors cursor-pointer"
                     >
-                      <FiLogOut size={18} />
-                      Logout
+                      <FiX size={22} />
                     </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  </div>
+                  
+                  {/* Navigation Links Area */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {navLinks.map((link) => (
+                      <Link
+                        key={link.name}
+                        to={link.path}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center justify-between p-3.5 bg-bg-silk-glow/20 hover:bg-logo-rose/5 border border-logo-rose/10 rounded-xl transition-all duration-300 group cursor-pointer"
+                      >
+                        <span className="font-sans text-xs font-semibold text-logo-black group-hover:text-logo-rose transition-colors">
+                          {link.name}
+                        </span>
+                        <span className="text-logo-rose/50 group-hover:translate-x-1 transition-transform duration-300 text-xs">→</span>
+                      </Link>
+                    ))}
+                  </div>
+                  
+                  {/* Bottom Auth & Tagline */}
+                  <div className="space-y-4 pt-1">
+                    {!isAuthenticated ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        <Link
+                          to="/login"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center justify-center font-sans text-xs font-bold py-2.5 border border-action-bordeaux/20 hover:border-action-bordeaux text-logo-black rounded-lg transition-all duration-300 cursor-pointer"
+                        >
+                          Sign In
+                        </Link>
+                        <Link
+                          to="/signup"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="flex items-center justify-center font-sans text-xs font-bold py-2.5 bg-action-bordeaux hover:bg-[#460416] text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+                        >
+                          Create Account
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-3 bg-bg-silk-glow/40 p-3 rounded-xl border border-logo-rose/5">
+                        <div className="flex items-center gap-3">
+                          {user?.profilePicUrl ? (
+                            <img
+                              src={user.profilePicUrl}
+                              alt={user.username}
+                              className="w-9 h-9 rounded-full object-cover ring-2 ring-logo-rose/20"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-logo-rose to-action-bordeaux flex items-center justify-center">
+                              <FiUser className="text-white" size={16} />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-sans text-xs font-bold text-logo-black truncate">
+                              {user?.username}
+                            </p>
+                            <p className="font-sans text-[10px] text-logo-black/50 truncate">
+                              {user?.email}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            handleLogout();
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className="flex items-center justify-center p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors cursor-pointer"
+                          title="Logout"
+                        >
+                          <FiLogOut size={14} />
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Tagline */}
+                    <div className="text-center font-serif text-[9px] uppercase tracking-widest text-logo-black/30 border-t border-logo-rose/5 pt-3">
+                      Elegance in every thread
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </header>
   );
 };

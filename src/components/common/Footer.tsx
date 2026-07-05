@@ -117,7 +117,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom Copyright bar */}
-        <div className="mt-12 pt-8 border-t border-logo-rose/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-center">
+        <div className="mt-2 pt-6 border-t border-logo-rose/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-center">
           <p className="font-sans text-xs text-logo-black/50">
             &copy; {new Date().getFullYear()} Data Garments. All rights reserved.
           </p>
