@@ -29,7 +29,7 @@ const Footer = () => {
                 loading="eager"
               />
             </Link>
-            <p className="font-sans text-sm text-logo-black/70 leading-relaxed max-w-sm">
+            <p className="font-sans text-sm text-logo-black/85 leading-relaxed max-w-sm">
               Premium garments designed for comfort, luxury, and everyday style. Explore our exclusive trendsetting capsule collections.
             </p>
             {/* Social Icons (Instagram, TikTok, WhatsApp Chat) */}
@@ -72,7 +72,7 @@ const Footer = () => {
                 <li key={link.name}>
                   <Link
                     to={link.path}
-                    className="font-sans text-sm text-logo-black/70 hover:text-logo-rose transition-colors duration-200"
+                    className="font-sans text-sm text-logo-black/85 hover:text-logo-rose transition-colors duration-200"
                   >
                     {link.name}
                   </Link>
@@ -89,7 +89,7 @@ const Footer = () => {
                 <li key={link.name}>
                   <Link
                     to={link.path}
-                    className="font-sans text-sm text-logo-black/70 hover:text-logo-rose transition-colors duration-200"
+                    className="font-sans text-sm text-logo-black/85 hover:text-logo-rose transition-colors duration-200"
                   >
                     {link.name}
                   </Link>
@@ -101,7 +101,7 @@ const Footer = () => {
           {/* WhatsApp Community Button / CTA */}
           <div className="col-span-2 md:col-span-1 flex flex-col gap-4">
             <h3 className="font-serif font-semibold text-lg text-logo-black">Join Our Community</h3>
-            <p className="font-sans text-sm text-logo-black/70 leading-relaxed">
+            <p className="font-sans text-sm text-logo-black/85 leading-relaxed">
               Become part of our exclusive WhatsApp community. Get early access to new collections, drops, and VIP sales.
             </p>
             <a
@@ -118,10 +118,10 @@ const Footer = () => {
 
         {/* Bottom Copyright bar */}
         <div className="mt-2 pt-6 border-t border-logo-rose/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-center">
-          <p className="font-sans text-xs text-logo-black/50">
+          <p className="font-sans text-xs text-logo-black/65">
             &copy; {new Date().getFullYear()} Data Garments. All rights reserved.
           </p>
-          <p className="font-sans text-xs text-logo-black/50">
+          <p className="font-sans text-xs text-logo-black/65">
             Crafted for premium comfort.
           </p>
         </div>
