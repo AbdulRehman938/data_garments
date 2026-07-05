@@ -23,9 +23,10 @@ const Footer = () => {
           <div className="col-span-2 md:col-span-1 flex flex-col gap-5">
             <Link to="/" className="inline-block">
               <img
-                src="/logo_header.png"
+                src="/logo_header.avif"
                 alt="Data Garments"
                 className="h-10 md:h-12 w-auto object-contain"
+                loading="eager"
               />
             </Link>
             <p className="font-sans text-sm text-logo-black/70 leading-relaxed max-w-sm">

@@ -104,9 +104,10 @@ export const Hero = () => {
               className="absolute left-[6%] top-[8%] w-[55%] aspect-[3/4] bg-white border border-logo-rose/25 rounded-2xl shadow-lg overflow-hidden hover:shadow-xl hover:border-logo-rose/50 transition-all duration-300 group cursor-pointer"
             >
               <img
-                src="/hero_portrait.png"
+                src="https://res.cloudinary.com/di9tb45rl/image/upload/v1783257380/hero_portrait_uplkbr.jpg"
                 alt="Pakistani embroidered lawn suit — editorial portrait"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
               />
             </motion.div>
 
@@ -126,9 +127,10 @@ export const Hero = () => {
               className="absolute right-[3%] bottom-[4%] w-[40%] aspect-square bg-white border border-logo-rose/25 rounded-2xl shadow-md overflow-hidden hover:shadow-lg hover:border-logo-rose/50 transition-all duration-300 group cursor-pointer"
             >
               <img
-                src="/hero_fabric.png"
+                src="https://res.cloudinary.com/di9tb45rl/image/upload/v1783257380/hero_fabric_xvcw3d.jpg"
                 alt="Pakistani lawn fabric embroidery detail"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
               />
             </motion.div>
 
@@ -148,9 +150,10 @@ export const Hero = () => {
               className="absolute right-[5%] top-[5%] w-[40%] aspect-[3/2] bg-white border border-logo-rose/25 rounded-xl shadow-md overflow-hidden hover:shadow-lg hover:border-logo-rose/50 transition-all duration-300 group cursor-pointer"
             >
               <img
-                src="/hero_lifestyle.png"
+                src="https://res.cloudinary.com/di9tb45rl/image/upload/v1783257380/hero_lifestyle_pk2j0z.jpg"
                 alt="Pakistani women in printed lawn suits — lifestyle scene"
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
               />
             </motion.div>
           </div>
