@@ -65,9 +65,8 @@ const Header = () => {
 
   return (
     <header
-      className={`sticky top-0 z-50 bg-pop-orchid/20 backdrop-blur-3xl rounded-b-2xl w-full transition-transform duration-300 ease-in-out transform ${
-        isVisible ? 'translate-y-0' : '-translate-y-full'
-      }`}
+      className={`sticky top-0 z-50 bg-pop-orchid/20 backdrop-blur-3xl rounded-b-2xl w-full transition-transform duration-300 ease-in-out transform ${isVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}
     >
       <div className="w-full px-2 md:px-6 py-3">
         <div className="flex items-center justify-between">
@@ -85,22 +84,21 @@ const Header = () => {
 
           {/* Right Side Buttons & Links */}
           <div className="flex items-center gap-1 md:gap-6">
-             {/* Action Buttons */}
+            {/* Action Buttons */}
             <div className="flex items-center gap-1 md:gap-4">
               {/* Search Section (Inline Flow) */}
               <div
                 onClick={() => {
                   if (!isSearchOpen) setIsSearchOpen(true);
                 }}
-                className={`flex items-center h-10 md:h-9 rounded-full overflow-hidden border transition-all duration-300 ease-in-out px-2.5 md:px-3 ${
-                  isSearchOpen
-                    ? 'w-[110px] xs:w-[150px] sm:w-[200px] md:w-[320px] bg-bg-silk-glow border-logo-rose/30 cursor-default'
+                className={`flex items-center h-10 md:h-9 rounded-full overflow-hidden border transition-all duration-300 ease-in-out px-2.5 md:px-3 ${isSearchOpen
+                    ? 'w-[220px] xs:w-[270px] sm:w-[360px] md:w-[380px] lg:w-[450px] bg-bg-silk-glow border-logo-rose/30 cursor-default'
                     : 'w-10 md:w-9 bg-transparent border-transparent hover:bg-logo-rose/10 cursor-pointer justify-center px-0!'
-                }`}
+                  }`}
               >
                 <div className="flex items-center justify-end w-full h-full gap-1.5 md:gap-1">
                   <FiSearch className={`w-6 h-6 md:w-5 md:h-5 shrink-0 transition-colors duration-200 ${isSearchOpen ? 'text-logo-black/50 w-4 h-4 md:w-5 md:h-5' : 'text-logo-black'}`} />
-                  
+
                   {isSearchOpen && (
                     <input
                       type="text"
@@ -169,7 +167,7 @@ const Header = () => {
                     {isProfileDropdownOpen && (
                       <>
                         {/* Mobile backdrop */}
-                        <div 
+                        <div
                           className="md:hidden fixed inset-0 bg-black/20 z-40"
                           onClick={() => setIsProfileDropdownOpen(false)}
                         />
@@ -180,61 +178,61 @@ const Header = () => {
                           transition={{ duration: 0.2 }}
                           className="fixed right-2 md:right-6 top-16 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-logo-rose/20 overflow-hidden z-[9999]"
                         >
-                        <div className="p-4 border-b border-logo-rose/10 bg-bg-silk-glow/30">
-                          <div className="flex items-center gap-3">
-                            {user?.profilePicUrl ? (
-                              <img
-                                src={user.profilePicUrl}
-                                alt={user.username}
-                                className="w-12 h-12 rounded-full object-cover ring-2 ring-logo-rose/20"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-logo-rose to-action-bordeaux flex items-center justify-center ring-2 ring-logo-rose/20">
-                                <FiUser className="text-white" size={24} />
+                          <div className="p-4 border-b border-logo-rose/10 bg-bg-silk-glow/30">
+                            <div className="flex items-center gap-3">
+                              {user?.profilePicUrl ? (
+                                <img
+                                  src={user.profilePicUrl}
+                                  alt={user.username}
+                                  className="w-12 h-12 rounded-full object-cover ring-2 ring-logo-rose/20"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-logo-rose to-action-bordeaux flex items-center justify-center ring-2 ring-logo-rose/20">
+                                  <FiUser className="text-white" size={24} />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="font-sans text-sm font-semibold text-logo-black truncate">
+                                  {user?.username}
+                                </p>
+                                <p className="font-sans text-xs text-logo-black/60 truncate">
+                                  {user?.email}
+                                </p>
                               </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="font-sans text-sm font-semibold text-logo-black truncate">
-                                {user?.username}
-                              </p>
-                              <p className="font-sans text-xs text-logo-black/60 truncate">
-                                {user?.email}
-                              </p>
                             </div>
                           </div>
-                        </div>
-                        <div className="p-2 space-y-1">
-                          {user?.role === 'Admin' && (
+                          <div className="p-2 space-y-1">
+                            {user?.role === 'Admin' && (
+                              <Link
+                                to="/admin/dashboard"
+                                onClick={() => setIsProfileDropdownOpen(false)}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-logo-rose/5 text-logo-black hover:text-logo-rose transition-all duration-200 cursor-pointer group"
+                              >
+                                <FiSettings size={18} className="group-hover:scale-110 transition-transform" />
+                                <span className="font-sans text-sm font-medium">Admin Dashboard</span>
+                              </Link>
+                            )}
                             <Link
-                              to="/admin/dashboard"
+                              to="/profile-settings"
                               onClick={() => setIsProfileDropdownOpen(false)}
                               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-logo-rose/5 text-logo-black hover:text-logo-rose transition-all duration-200 cursor-pointer group"
                             >
                               <FiSettings size={18} className="group-hover:scale-110 transition-transform" />
-                              <span className="font-sans text-sm font-medium">Admin Dashboard</span>
+                              <span className="font-sans text-sm font-medium">Profile Settings</span>
                             </Link>
-                          )}
-                          <Link
-                            to="/profile-settings"
-                            onClick={() => setIsProfileDropdownOpen(false)}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-logo-rose/5 text-logo-black hover:text-logo-rose transition-all duration-200 cursor-pointer group"
-                          >
-                            <FiSettings size={18} className="group-hover:scale-110 transition-transform" />
-                            <span className="font-sans text-sm font-medium">Profile Settings</span>
-                          </Link>
-                          <div className="border-t border-logo-rose/10 my-1"></div>
-                          <button
-                            onClick={() => {
-                              handleLogout();
-                              setIsProfileDropdownOpen(false);
-                            }}
-                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-logo-black hover:text-red-600 transition-all duration-200 cursor-pointer group"
-                          >
-                            <FiLogOut size={18} className="group-hover:scale-110 transition-transform" />
-                            <span className="font-sans text-sm font-medium">Logout</span>
-                          </button>
-                        </div>
-                      </motion.div>
+                            <div className="border-t border-logo-rose/10 my-1"></div>
+                            <button
+                              onClick={() => {
+                                handleLogout();
+                                setIsProfileDropdownOpen(false);
+                              }}
+                              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-logo-black hover:text-red-600 transition-all duration-200 cursor-pointer group"
+                            >
+                              <FiLogOut size={18} className="group-hover:scale-110 transition-transform" />
+                              <span className="font-sans text-sm font-medium">Logout</span>
+                            </button>
+                          </div>
+                        </motion.div>
                       </>
                     )}
                   </AnimatePresence>
@@ -261,9 +259,8 @@ const Header = () => {
                 <Link
                   key={link.name}
                   to={link.path}
-                  className={`font-sans text-logo-black font-medium hover:text-logo-rose transition-colors duration-200 relative group ${
-                    link.name === 'Contact Us' ? 'text-xs' : 'text-xs'
-                  }`}
+                  className={`font-sans text-logo-black font-medium hover:text-logo-rose transition-colors duration-200 relative group ${link.name === 'Contact Us' ? 'text-xs' : 'text-xs'
+                    }`}
                 >
                   {link.name}
                   <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-logo-rose group-hover:w-full transition-all duration-300" />
@@ -299,7 +296,7 @@ const Header = () => {
           {isMobileMenuOpen && (
             <>
               {/* Backdrop with smooth fade */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -326,7 +323,7 @@ const Header = () => {
                       <FiX size={22} />
                     </button>
                   </div>
-                  
+
                   {/* Navigation Links Area */}
                   <div className="grid grid-cols-2 gap-3">
                     {navLinks.map((link) => (
@@ -343,7 +340,7 @@ const Header = () => {
                       </Link>
                     ))}
                   </div>
-                  
+
                   {/* Bottom Auth & Tagline */}
                   <div className="space-y-4 pt-1">
                     {!isAuthenticated ? (
@@ -398,7 +395,7 @@ const Header = () => {
                         </button>
                       </div>
                     )}
-                    
+
                     {/* Tagline */}
                     <div className="text-center font-serif text-[9px] uppercase tracking-widest text-logo-black/30 border-t border-logo-rose/5 pt-3">
                       Elegance in every thread
