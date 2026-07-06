@@ -1,10 +1,11 @@
-import { createBrowserRouter } from 'react-router-dom';
-import { HomePage, Login, Signup, VerifyOtp, ProfileSettings, NotFound } from '../pages';
+import { createBrowserRouter, Outlet } from 'react-router-dom';
+import { HomePage, Login, Signup, VerifyOtp, ProfileSettings, NotFound, Shop, ProductDetail } from '../pages';
 import ForgotPassword from '../pages/auth/ForgotPassword';
 import UpdatePassword from '../pages/auth/UpdatePassword';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminCategories from '../pages/admin/AdminCategories';
 import AdminProducts from '../pages/admin/AdminProducts';
+import AdminAddProduct from '../pages/admin/AdminAddProduct';
 import AdminUsers from '../pages/admin/AdminUsers';
 import AdminSales from '../pages/admin/AdminSales';
 import Header from '../components/common/Header';
@@ -15,7 +16,7 @@ const MainLayout = () => {
     <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-grow">
-        <HomePage />
+        <Outlet />
       </main>
       <Footer />
     </div>
@@ -37,6 +38,20 @@ export const router = createBrowserRouter([
   {
     path: '/',
     element: <MainLayout />,
+    children: [
+      {
+        index: true,
+        element: <HomePage />,
+      },
+      {
+        path: 'shop',
+        element: <Shop />,
+      },
+      {
+        path: 'product/:id',
+        element: <ProductDetail />,
+      },
+    ],
   },
   {
     path: '/login',
@@ -105,6 +120,10 @@ export const router = createBrowserRouter([
       {
         path: 'products',
         element: <AdminProducts />,
+      },
+      {
+        path: 'products/add',
+        element: <AdminAddProduct />,
       },
       {
         path: 'users',

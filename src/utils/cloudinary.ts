@@ -3,14 +3,25 @@ const CLOUD_NAME = 'di9tb45rl';
 const API_KEY = '344247339423785';
 const API_SECRET = '4iiRti_yJ66jNiVfMDC5DAhQtP4';
 
+// Generate SHA-1 hash using Web Crypto API
+const sha1 = async (message: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex;
+};
+
 // Generate signature for signed upload
-const generateSignature = (params: any): string => {
+const generateSignature = async (params: any): Promise<string> => {
   const sortedParams = Object.keys(params)
     .sort()
     .map((key) => `${key}=${params[key]}`)
     .join('&');
   
-  return btoa(sortedParams + API_SECRET);
+  const stringToSign = sortedParams + API_SECRET;
+  return await sha1(stringToSign);
 };
 
 export const uploadImage = async (file: File, folder: string = 'products'): Promise<string> => {
@@ -21,7 +32,7 @@ export const uploadImage = async (file: File, folder: string = 'products'): Prom
       folder,
     };
     
-    const signature = generateSignature(paramsToSign);
+    const signature = await generateSignature(paramsToSign);
     
     const formData = new FormData();
     formData.append('file', file);
@@ -67,7 +78,7 @@ export const deleteImage = async (publicId: string): Promise<void> => {
       timestamp,
     };
     
-    const signature = generateSignature(paramsToSign);
+    const signature = await generateSignature(paramsToSign);
 
     const response = await fetch(
       `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/destroy`,

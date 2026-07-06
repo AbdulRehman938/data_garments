@@ -41,7 +41,7 @@ export const Hero = () => {
           {/* Eyebrow Tagline */}
           <motion.span
             variants={itemVariants}
-            className="font-sans text-xs md:text-sm tracking-[0.25em] text-action-bordeaux uppercase font-semibold mb-4"
+            className="font-sans text-xs md:text-sm tracking-[0.25em] text-action-bordeaux uppercase font-semibold"
           >
             Elegance In Every Thread
           </motion.span>
@@ -49,7 +49,7 @@ export const Hero = () => {
           {/* Main Heading */}
           <motion.h1
             variants={itemVariants}
-            className="font-serif font-medium text-6xl sm:text-7xl md:text-6xl lg:text-[8rem] xl:text-[9rem] text-logo-black leading-[1.05] mb-8 tracking-[-0.03em]"
+            className="font-serif font-medium text-6xl sm:text-7xl md:text-6xl lg:text-[8rem] xl:text-6xl! text-logo-black leading-[1.05] mb-8 tracking-[-0.03em]"
           >
             Redefining <br />
             <em className="text-logo-rose not-italic">Feminine</em> Luxury
@@ -58,7 +58,7 @@ export const Hero = () => {
           {/* Body Copy */}
           <motion.p
             variants={itemVariants}
-            className="font-sans text-sm md:text-base lg:text-lg text-logo-black/70 leading-relaxed max-w-xl mb-10"
+            className="font-sans text-sm md:text-base lg:text-lg font-medium text-logo-black leading-relaxed max-w-2xl mb-10"
           >
             Discover our summer capsule collection. Tailored minimalist designs, ethically crafted in silk, linen, and organic cotton to celebrate the modern woman.
           </motion.p>
@@ -66,18 +66,18 @@ export const Hero = () => {
           {/* CTA Buttons */}
           <motion.div
             variants={itemVariants}
-            className="flex flex-row items-center gap-2 md:gap-6 mt-10"
+            className="flex flex-row items-center gap-2 md:gap-5 mt-10"
           >
             <a
               href="/shop"
-              className="inline-flex items-center justify-center gap-1.5 xs:gap-2 px-4 py-2.5 xs:px-7 xs:py-3.5 bg-action-bordeaux hover:bg-[#460416] text-white rounded-full font-sans font-semibold tracking-wide text-xs xs:text-sm shadow-md transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-1.5 xs:gap-2 px-4 py-2.5 xs:px-7 xs:py-3.5 bg-action-bordeaux hover:bg-[#460416] text-white rounded-full font-sans font-bold tracking-wide text-xs xs:text-sm shadow-md transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] cursor-pointer whitespace-nowrap"
             >
               Shop Collection
               <FiArrowRight className="w-4 h-4 md:w-[18px] md:h-[18px]" />
             </a>
             <a
               href="/lookbook"
-              className="inline-flex items-center justify-center gap-1.5 xs:gap-2 px-4 py-2.5 xs:px-7 xs:py-3.5 border border-logo-rose/40 hover:border-logo-rose hover:bg-logo-rose/5 text-logo-black rounded-full font-sans font-semibold tracking-wide text-xs xs:text-sm transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] cursor-pointer whitespace-nowrap"
+              className="inline-flex items-center justify-center gap-1.5 xs:gap-2 px-4 py-2.5 xs:px-7 xs:py-3.5 border border-logo-rose/40 hover:border-logo-rose hover:bg-logo-rose/5 text-logo-black rounded-full font-sans font-bold tracking-wide text-xs xs:text-sm transition-all duration-300 hover:scale-[1.03] active:scale-[0.98] cursor-pointer whitespace-nowrap"
             >
               <FiPlay className="w-3.5 h-3.5 md:w-4 md:h-4 text-logo-rose" />
               View Lookbook

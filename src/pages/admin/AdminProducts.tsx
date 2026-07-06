@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage, FiX } from 'react-icons/fi';
 import { supabase } from '../../utils/supabase';
 import { uploadMultipleImages, deleteImage } from '../../utils/cloudinary';
@@ -29,6 +30,7 @@ interface Category {
 }
 
 const AdminProducts = () => {
+  const navigate = useNavigate();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -96,7 +98,8 @@ const AdminProducts = () => {
     try {
       const { data, error } = await supabase
         .from('categories')
-        .select('*');
+        .select('*')
+        .not('name', 'ilike', '__SYSTEM_%'); // Exclude system config rows
 
       if (error) throw error;
       setCategories(data || []);
@@ -220,7 +223,7 @@ const AdminProducts = () => {
     }
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = async (product: Product) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
@@ -230,7 +233,28 @@ const AdminProducts = () => {
       image_url: product.image_url || '',
       stock: product.stock.toString(),
     });
-    setSelectedFiles([]);
+    
+    // Fetch existing images for this product
+    if (product.images && product.images.length > 0) {
+      // Convert image URLs to File objects for preview
+      const imageFiles = await Promise.all(
+        product.images.map(async (img) => {
+          try {
+            const response = await fetch(img.image_url);
+            const blob = await response.blob();
+            const file = new File([blob], `image_${img.order_index}.jpg`, { type: 'image/jpeg' });
+            return file;
+          } catch (error) {
+            console.error('Error fetching image:', error);
+            return null;
+          }
+        })
+      );
+      setSelectedFiles(imageFiles.filter((f): f is File => f !== null));
+    } else {
+      setSelectedFiles([]);
+    }
+    
     setIsModalOpen(true);
   };
 
@@ -279,13 +303,8 @@ const AdminProducts = () => {
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            setEditingProduct(null);
-            setFormData({ name: '', description: '', price: '', category_id: '', image_url: '', stock: '' });
-            setSelectedFiles([]);
-            setIsModalOpen(true);
-          }}
-          className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-action-bordeaux text-white rounded-xl font-medium text-sm hover:bg-logo-black transition-colors"
+          onClick={() => navigate('/admin/products/add')}
+          className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-action-bordeaux text-white rounded-xl font-medium text-sm hover:bg-logo-black transition-colors cursor-pointer"
         >
           <FiPlus size={18} />
           Add Product
