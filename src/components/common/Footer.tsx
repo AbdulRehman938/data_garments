@@ -14,6 +14,24 @@ const Footer = () => {
     { name: 'Terms & Conditions', path: '/terms' },
   ];
 
+  const socialLinks = [
+    {
+      label: 'Instagram',
+      href: 'https://www.instagram.com/data_garments06?igsh=MWc3bnRwMXNlY3U4bg==',
+      icon: <FaInstagram size={20} />,
+    },
+    {
+      label: 'TikTok',
+      href: 'https://www.tiktok.com/@datagarments06?_r=1&_t=ZS-97oFpWscSwf',
+      icon: <FaTiktok size={18} />,
+    },
+    {
+      label: 'WhatsApp',
+      href: 'https://wa.me/923167797719',
+      icon: <FaWhatsapp size={20} />,
+    },
+  ];
+
   return (
     <footer className="bg-pop-orchid/20 backdrop-blur-3xl rounded-t-2xl w-full mt-auto">
       {/* Main Footer Content */}
@@ -32,35 +50,20 @@ const Footer = () => {
             <p className="font-sans text-sm text-logo-black/85 leading-relaxed max-w-sm">
               Premium garments designed for comfort, luxury, and everyday style. Explore our exclusive trendsetting capsule collections.
             </p>
-            {/* Social Icons (Instagram, TikTok, WhatsApp Chat) */}
-            <div className="flex items-center gap-4">
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-logo-rose/10 flex items-center justify-center text-logo-black hover:text-logo-rose hover:bg-logo-rose/20 transition-all duration-300 cursor-pointer"
-                aria-label="Instagram"
-              >
-                <FaInstagram size={20} />
-              </a>
-              <a
-                href="https://tiktok.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-logo-rose/10 flex items-center justify-center text-logo-black hover:text-logo-rose hover:bg-logo-rose/20 transition-all duration-300 cursor-pointer"
-                aria-label="TikTok"
-              >
-                <FaTiktok size={18} />
-              </a>
-              <a
-                href="https://wa.me/yourphonenumber"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-logo-rose/10 flex items-center justify-center text-logo-black hover:text-logo-rose hover:bg-logo-rose/20 transition-all duration-300 cursor-pointer"
-                aria-label="WhatsApp Chat"
-              >
-                <FaWhatsapp size={20} />
-              </a>
+            {/* Social Icons */}
+            <div className="flex items-center gap-3">
+              {socialLinks.map(({ label, href, icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="w-10 h-10 rounded-full bg-logo-rose/10 flex items-center justify-center text-logo-black hover:text-logo-rose hover:bg-logo-rose/20 transition-all duration-300 cursor-pointer"
+                >
+                  {icon}
+                </a>
+              ))}
             </div>
           </div>
 
@@ -98,14 +101,14 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* WhatsApp Community Button / CTA */}
+          {/* WhatsApp Community CTA */}
           <div className="col-span-2 md:col-span-1 flex flex-col gap-4">
             <h3 className="font-serif font-semibold text-lg text-logo-black">Join Our Community</h3>
             <p className="font-sans text-sm text-logo-black/85 leading-relaxed">
               Become part of our exclusive WhatsApp community. Get early access to new collections, drops, and VIP sales.
             </p>
             <a
-              href="https://chat.whatsapp.com/yourcommunitylink"
+              href="https://chat.whatsapp.com/BUPu8pemtrj82Te1NWax0W"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full font-sans font-medium text-sm transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98] shadow-md cursor-pointer"

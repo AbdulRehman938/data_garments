@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiImage, FiX, FiStar, FiCheck } from 'react-icons/fi';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import { supabase } from '../../utils/supabase';
 import { uploadImage } from '../../utils/cloudinary';
+import { useToast } from '../../components/common/Toast';
 
 const SYSTEM_SETTINGS_KEY = '__SYSTEM_SETTINGS__';
 
@@ -15,6 +18,7 @@ interface Category {
 }
 
 const AdminCategories = () => {
+  const { toast, confirm } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,9 +27,22 @@ const AdminCategories = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
-  const [formData, setFormData] = useState({ name: '', description: '', image_url: '' });
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string>('');
+
+  const categorySchema = Yup.object({
+    name: Yup.string()
+      .trim()
+      .min(2, 'Name must be at least 2 characters')
+      .max(50, 'Name cannot exceed 50 characters')
+      .matches(/^[a-zA-Z0-9\s&'-]+$/, 'Only letters, numbers and basic punctuation allowed')
+      .required('Category name is required'),
+    description: Yup.string()
+      .trim()
+      .max(300, 'Description cannot exceed 300 characters')
+      .optional(),
+  });
 
   // Featured categories panel state
   const [featuredIds, setFeaturedIds] = useState<string[]>([]);
@@ -118,66 +135,79 @@ const AdminCategories = () => {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setIsUploading(true);
-    try {
-      let imageUrl = formData.image_url;
-      if (selectedFile) {
-        imageUrl = await uploadImage(selectedFile, 'categories');
+  const formik = useFormik({
+    initialValues: { name: '', description: '' },
+    validationSchema: categorySchema,
+    enableReinitialize: true,
+    onSubmit: async (values, { resetForm }) => {
+      setIsLoading(true);
+      setIsUploading(true);
+      try {
+        let imageUrl = imagePreviewUrl;
+        if (selectedFile) {
+          imageUrl = await uploadImage(selectedFile, 'categories');
+        }
+        if (editingCategory) {
+          const { error } = await supabase.from('categories').update({
+            name: values.name.trim(),
+            description: values.description.trim(),
+            image_url: imageUrl,
+          }).eq('id', editingCategory.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from('categories').insert({
+            name: values.name.trim(),
+            description: values.description.trim(),
+            image_url: imageUrl,
+          });
+          if (error) throw error;
+        }
+        setIsModalOpen(false);
+        setEditingCategory(null);
+        resetForm();
+        setSelectedFile(null);
+        setImagePreviewUrl('');
+        fetchCategories();
+      } catch (error: any) {
+        console.error('Error saving category:', error);
+        toast(error.message || 'Failed to save category', 'error', 'Save Failed');
+      } finally {
+        setIsLoading(false);
+        setIsUploading(false);
       }
-      if (editingCategory) {
-        const { error } = await supabase.from('categories').update({
-          name: formData.name,
-          description: formData.description,
-          image_url: imageUrl
-        }).eq('id', editingCategory.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('categories').insert({
-          name: formData.name,
-          description: formData.description,
-          image_url: imageUrl
-        });
-        if (error) throw error;
-      }
-      setIsModalOpen(false);
-      setEditingCategory(null);
-      setFormData({ name: '', description: '', image_url: '' });
-      setSelectedFile(null);
-      fetchCategories();
-    } catch (error: any) {
-      console.error('Error saving category:', error);
-      alert(error.message || 'Failed to save category');
-    } finally {
-      setIsLoading(false);
-      setIsUploading(false);
-    }
-  };
+    },
+  });
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
-    setFormData({
+    formik.setValues({
       name: category.name,
       description: category.description || '',
-      image_url: category.image_url || ''
     });
+    formik.resetForm({ values: { name: category.name, description: category.description || '' } });
     setSelectedFile(null);
+    setImagePreviewUrl(category.image_url || '');
     setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this category?')) return;
+    const ok = await confirm({
+      title: 'Delete Category',
+      message: 'Are you sure you want to delete this category? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      cancelLabel: 'Cancel',
+      danger: true,
+    });
+    if (!ok) return;
     try {
       const { error } = await supabase.from('categories').delete().eq('id', id);
       if (error) throw error;
-      // Also remove from featured if present
       setFeaturedIds((prev) => prev.filter((x) => x !== id));
+      toast('Category deleted successfully.', 'success');
       fetchCategories();
     } catch (error: any) {
       console.error('Error deleting category:', error);
-      alert(error.message || 'Failed to delete category');
+      toast(error.message || 'Failed to delete category', 'error', 'Delete Failed');
     }
   };
 
@@ -271,7 +301,7 @@ const AdminCategories = () => {
           <h1 className="font-serif text-2xl md:text-3xl text-logo-black">All Categories</h1>
           <motion.button
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            onClick={() => { setEditingCategory(null); setFormData({ name: '', description: '', image_url: '' }); setSelectedFile(null); setIsModalOpen(true); }}
+            onClick={() => { setEditingCategory(null); formik.resetForm(); setSelectedFile(null); setImagePreviewUrl(''); setIsModalOpen(true); }}
             className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-action-bordeaux text-white rounded-xl font-medium text-sm hover:bg-logo-black transition-colors cursor-pointer"
           >
             <FiPlus size={18} /> Add Category
@@ -391,7 +421,6 @@ const AdminCategories = () => {
         </div>
       </div>
 
-      {/* Modal */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
@@ -400,38 +429,75 @@ const AdminCategories = () => {
               className="bg-white rounded-t-2xl sm:rounded-2xl p-5 md:p-6 w-full sm:max-w-md max-h-[90vh] overflow-y-auto"
             >
               <h2 className="font-serif text-xl md:text-2xl text-logo-black mb-4">{editingCategory ? 'Edit Category' : 'Add Category'}</h2>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={formik.handleSubmit} className="space-y-4">
+                {/* Image Upload */}
                 <div>
                   <label className="block text-sm font-medium text-logo-black mb-1">Category Image</label>
                   <div className="relative">
-                    <input type="file" accept="image/*" onChange={(e) => { const file = e.target.files?.[0]; if (file) setSelectedFile(file); }} className="hidden" id="category-image" />
+                    <input type="file" accept="image/*" onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) { setSelectedFile(file); setImagePreviewUrl(URL.createObjectURL(file)); }
+                    }} className="hidden" id="category-image" />
                     <label htmlFor="category-image" className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-logo-rose/30 rounded-xl hover:border-logo-rose hover:bg-logo-rose/5 transition-all cursor-pointer">
                       <FiImage size={20} className="text-logo-rose" />
-                      <span className="text-sm text-logo-black/70">{selectedFile ? selectedFile.name : (formData.image_url ? 'Change image' : 'Upload image')}</span>
+                      <span className="text-sm text-logo-black/70">{selectedFile ? selectedFile.name : (imagePreviewUrl ? 'Change image' : 'Upload image')}</span>
                     </label>
-                    {(selectedFile || formData.image_url) && (
-                      <button type="button" onClick={() => { setSelectedFile(null); setFormData({ ...formData, image_url: '' }); }} className="absolute top-2 right-2 p-1 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors">
+                    {(selectedFile || imagePreviewUrl) && (
+                      <button type="button" onClick={() => { setSelectedFile(null); setImagePreviewUrl(''); }} className="absolute top-2 right-2 p-1 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors cursor-pointer">
                         <FiX size={14} />
                       </button>
                     )}
                   </div>
-                  {(selectedFile || formData.image_url) && (
+                  {imagePreviewUrl && (
                     <div className="mt-3">
-                      <img src={selectedFile ? URL.createObjectURL(selectedFile) : formData.image_url!} alt="Preview" className="w-full h-32 object-cover rounded-lg" />
+                      <img src={imagePreviewUrl} alt="Preview" className="w-full h-32 object-cover rounded-lg" />
                     </div>
                   )}
                 </div>
+
+                {/* Name */}
                 <div>
-                  <label className="block text-sm font-medium text-logo-black mb-1">Name</label>
-                  <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-2.5 border border-logo-rose/20 rounded-xl focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20" />
+                  <label className="block text-sm font-medium text-logo-black mb-1">Name *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    maxLength={50}
+                    placeholder="e.g. Summer Collection"
+                    value={formik.values.name}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-logo-rose/20 text-sm ${formik.touched.name && formik.errors.name ? 'border-red-400 focus:border-red-400' : 'border-logo-rose/20 focus:border-logo-rose'}`}
+                  />
+                  <div className="flex justify-between items-center mt-0.5 h-4">
+                    <span className="text-xs text-red-500 font-sans">{formik.touched.name && formik.errors.name ? formik.errors.name : ''}</span>
+                    <span className="text-[10px] text-logo-black/30 font-sans">{formik.values.name.length}/50</span>
+                  </div>
                 </div>
+
+                {/* Description */}
                 <div>
                   <label className="block text-sm font-medium text-logo-black mb-1">Description</label>
-                  <textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} className="w-full px-4 py-2.5 border border-logo-rose/20 rounded-xl focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20" />
+                  <textarea
+                    name="description"
+                    maxLength={300}
+                    rows={3}
+                    placeholder="Brief description of this category..."
+                    value={formik.values.description}
+                    onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
+                    className={`w-full px-4 py-2.5 border rounded-xl focus:outline-none focus:ring-2 focus:ring-logo-rose/20 text-sm resize-none ${formik.touched.description && formik.errors.description ? 'border-red-400 focus:border-red-400' : 'border-logo-rose/20 focus:border-logo-rose'}`}
+                  />
+                  <div className="flex justify-between items-center mt-0.5 h-4">
+                    <span className="text-xs text-red-500 font-sans">{formik.touched.description && formik.errors.description ? formik.errors.description : ''}</span>
+                    <span className="text-[10px] text-logo-black/30 font-sans">{formik.values.description.length}/300</span>
+                  </div>
                 </div>
+
                 <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-2.5 border border-logo-rose/20 rounded-xl hover:bg-logo-rose/10 transition-colors text-sm font-medium">Cancel</button>
-                  <button type="submit" disabled={isUploading} className="flex-1 py-2.5 bg-action-bordeaux text-white rounded-xl hover:bg-logo-black transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button type="button" onClick={() => { setIsModalOpen(false); formik.resetForm(); setImagePreviewUrl(''); setSelectedFile(null); }}
+                    className="flex-1 py-2.5 border border-logo-rose/20 rounded-xl hover:bg-logo-rose/10 transition-colors text-sm font-medium cursor-pointer">Cancel</button>
+                  <button type="submit" disabled={isUploading || !formik.isValid}
+                    className="flex-1 py-2.5 bg-action-bordeaux text-white rounded-xl hover:bg-logo-black transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
                     {isUploading ? 'Uploading...' : (editingCategory ? 'Update' : 'Create')}
                   </button>
                 </div>

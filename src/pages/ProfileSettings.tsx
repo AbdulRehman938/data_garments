@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { FiUser, FiMail, FiPhone, FiMapPin, FiCamera, FiArrowLeft, FiSave } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiMapPin, FiCamera, FiArrowLeft, FiSave, FiHeart } from 'react-icons/fi';
 import { Link, useLocation } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -150,8 +150,11 @@ const ProfileSettings = () => {
 
   const validationSchema = Yup.object().shape({
     username: Yup.string()
+      .trim()
       .min(3, 'Username must be at least 3 characters')
-      . required('Username is required'),
+      .max(30, 'Username cannot exceed 30 characters')
+      .matches(/^[a-zA-Z0-9_.-]+$/, 'Only letters, numbers, underscores, dots and hyphens allowed')
+      .required('Username is required'),
     email: Yup.string()
       .email('Invalid email address')
       .required('Email is required'),
@@ -163,7 +166,9 @@ const ProfileSettings = () => {
         return val.length === expectedLength;
       }),
     address: Yup.string()
+      .trim()
       .min(10, 'Address must be at least 10 characters')
+      .max(200, 'Address cannot exceed 200 characters')
       .required('Address is required'),
   });
 
@@ -291,6 +296,21 @@ const ProfileSettings = () => {
           <p className="font-sans text-sm text-logo-black/60">
             Update your profile information
           </p>
+
+          {/* Quick nav tabs */}
+          {!isAdminContext && (
+            <div className="flex gap-2 mt-4">
+              <span className="px-4 py-2 bg-action-bordeaux text-white rounded-full font-sans font-bold text-xs uppercase tracking-wide">
+                Profile
+              </span>
+              <Link
+                to="/wishlist"
+                className="flex items-center gap-1.5 px-4 py-2 border border-logo-rose/20 text-logo-black/60 hover:border-logo-rose hover:text-logo-rose rounded-full font-sans font-bold text-xs uppercase tracking-wide transition-all"
+              >
+                <FiHeart size={12} /> Wishlist
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Profile Card */}
@@ -345,14 +365,16 @@ const ProfileSettings = () => {
                     type="text"
                     name="username"
                     placeholder="Enter username"
+                    maxLength={30}
                     value={formik.values.username}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     className="w-full pl-11 pr-4 py-2.5 bg-bg-silk-glow/50 border border-logo-rose/20 rounded-xl font-sans text-sm text-logo-black placeholder:text-logo-black/40 focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20 transition-all duration-300"
                   />
                 </div>
-                <div className="h-4 text-xs text-red-500 font-sans mt-0.5 px-1">
-                  {formik.touched.username && formik.errors.username ? formik.errors.username : ''}
+                <div className="flex justify-between items-center h-4 text-xs font-sans mt-0.5 px-1">
+                  <span className="text-red-500">{formik.touched.username && formik.errors.username ? formik.errors.username : ''}</span>
+                  <span className="text-logo-black/30">{formik.values.username.length}/30</span>
                 </div>
               </div>
 
@@ -406,8 +428,13 @@ const ProfileSettings = () => {
                     type="text"
                     name="phone"
                     placeholder={`Format: ${currentMask.replace(/#/g, 'X')}`}
+                    maxLength={expectedLength}
                     value={formik.values.phone}
-                    onChange={formik.handleChange}
+                    onChange={(e) => {
+                      // Only allow digits
+                      const val = e.target.value.replace(/\D/g, '');
+                      formik.setFieldValue('phone', val);
+                    }}
                     onBlur={formik.handleBlur}
                     className="w-full px-3 py-2.5 bg-transparent border-none outline-none font-sans text-sm text-logo-black placeholder:text-logo-black/30"
                   />
@@ -462,8 +489,13 @@ const ProfileSettings = () => {
                   </div>
                 )}
 
-                <div className="h-4 text-xs text-red-500 font-sans mt-0.5 px-1">
-                  {formik.touched.phone && formik.errors.phone ? formik.errors.phone : ''}
+                <div className="flex justify-between items-center mt-0.5 px-1" style={{ minHeight: '1rem' }}>
+                  <span className="text-xs text-red-500 font-sans">
+                    {formik.touched.phone && formik.errors.phone ? formik.errors.phone : ''}
+                  </span>
+                  <span className="text-[10px] text-logo-black/30 font-sans shrink-0 ml-2">
+                    {formik.values.phone.length}/{expectedLength} digits
+                  </span>
                 </div>
               </div>
 
@@ -480,14 +512,16 @@ const ProfileSettings = () => {
                     type="text"
                     name="address"
                     placeholder="Enter your complete shipping address"
+                    maxLength={200}
                     value={formik.values.address}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                     className="w-full pl-11 pr-4 py-2.5 bg-bg-silk-glow/50 border border-logo-rose/20 rounded-xl font-sans text-sm text-logo-black placeholder:text-logo-black/40 focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20 transition-all duration-300"
                   />
                 </div>
-                <div className="h-4 text-xs text-red-500 font-sans mt-0.5 px-1">
-                  {formik.touched.address && formik.errors.address ? formik.errors.address : ''}
+                <div className="flex justify-between items-center h-4 text-xs font-sans mt-0.5 px-1">
+                  <span className="text-red-500">{formik.touched.address && formik.errors.address ? formik.errors.address : ''}</span>
+                  <span className="text-logo-black/30">{formik.values.address.length}/200</span>
                 </div>
               </div>
             </div>

@@ -3,9 +3,11 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiSearch, FiArrowLeft, FiImage, FiChevronLeft, FiChevronRight,
-  FiFilter, FiX, FiShoppingBag, FiCheckCircle
+  FiFilter, FiX, FiShoppingBag, FiCheckCircle, FiLock,
 } from 'react-icons/fi';
 import { supabase } from '../utils/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 
 interface ProductImage {
   id: string;
@@ -37,10 +39,10 @@ const ITEMS_PER_PAGE = 10;
 
 const PRICE_RANGES = [
   { label: 'All Prices', min: 0, max: Infinity },
-  { label: 'Under $50', min: 0, max: 50 },
-  { label: '$50 – $100', min: 50, max: 100 },
-  { label: '$100 – $200', min: 100, max: 200 },
-  { label: '$200+', min: 200, max: Infinity },
+  { label: 'Under PKR 2,000', min: 0, max: 2000 },
+  { label: 'PKR 2,000 – 5,000', min: 2000, max: 5000 },
+  { label: 'PKR 5,000 – 10,000', min: 5000, max: 10000 },
+  { label: 'PKR 10,000+', min: 10000, max: Infinity },
 ];
 
 const SORT_OPTIONS = [
@@ -56,6 +58,8 @@ const SIZE_OPTIONS  = ['All', 'XS', 'S', 'M', 'L', 'XL', 'XXL'];
 const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCategoryId = searchParams.get('category');
+  const { isAuthenticated } = useAuth();
+  const { addToCart, openCart } = useCart();
 
   const [products, setProducts]       = useState<Product[]>([]);
   const [categories, setCategories]   = useState<Category[]>([]);
@@ -65,6 +69,12 @@ const Shop = () => {
   const [hoveredId, setHoveredId]     = useState<string | null>(null);
   const [cartId, setCartId]           = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -142,6 +152,25 @@ const Shop = () => {
     }
   }, [activeCategoryId, currentPage, inStockOnly, searchQuery, priceRange, sortBy]);
 
+  // Client-side size/color filtering on top of server results
+  const filteredProducts = products.filter((product) => {
+    if (selectedSize === 'All' && selectedColor === 'All') return true;
+    try {
+      const details = (product as any).details
+        ? JSON.parse((product as any).details)
+        : {};
+      if (selectedSize !== 'All') {
+        const sizes: string[] = details.sizes || [];
+        if (!sizes.some((s) => s.toLowerCase() === selectedSize.toLowerCase())) return false;
+      }
+      if (selectedColor !== 'All') {
+        const colors: string[] = details.colors || [];
+        if (!colors.some((c) => c.toLowerCase() === selectedColor.toLowerCase())) return false;
+      }
+    } catch { return false; }
+    return true;
+  });
+
   useEffect(() => {
     setCurrentPage(1);
   }, [activeCategoryId, inStockOnly, searchQuery, priceRange, sortBy]);
@@ -155,9 +184,18 @@ const Shop = () => {
     else setSearchParams({});
   };
 
-  const handleAddCart = (id: string, e: React.MouseEvent) => {
+  const handleAddCart = (product: Product, e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
-    setCartId(id);
+    if (!isAuthenticated) { setShowAuthModal(true); return; }
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image_url: product.image_url,
+      quantity: 1,
+    });
+    openCart();
+    setCartId(product.id);
     setTimeout(() => setCartId(null), 2000);
   };
 
@@ -174,20 +212,28 @@ const Shop = () => {
   return (
     <div className="bg-bg-silk-glow min-h-screen font-sans pb-24">
 
-      {/* ── Hero Banner ── */}
-      <div className="bg-white border-b border-logo-rose/10 py-10 md:py-14 px-6 md:px-12 lg:px-16">
-        <div className="max-w-[1600px] mx-auto">
-          <Link to="/" className="inline-flex items-center gap-2 text-logo-rose hover:text-action-bordeaux transition-colors text-sm font-semibold mb-5">
-            <FiArrowLeft size={15} /> Back to Home
-          </Link>
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <h1 className="font-serif text-3xl md:text-5xl text-logo-black mb-3">
-              {activeCategory ? activeCategory.name : 'Our Collections'}
+      {/* ── Slim Page Header ── */}
+      <div className="bg-white border-b border-logo-rose/10 px-6 md:px-12 lg:px-16 py-4">
+        <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Link to="/" className="inline-flex items-center gap-1.5 text-logo-rose hover:text-action-bordeaux transition-colors text-xs font-semibold">
+              <FiArrowLeft size={14} /> Home
+            </Link>
+            <span className="text-logo-black/20">/</span>
+            <h1 className="font-serif text-xl md:text-2xl text-logo-black">
+              {activeCategory ? activeCategory.name : 'All Collections'}
             </h1>
-            <p className="text-logo-black/65 max-w-2xl text-sm md:text-base leading-relaxed">
-              {activeCategory?.description || 'Explore our full catalogue of handcrafted garments — timeless elegance for the modern woman.'}
-            </p>
-          </motion.div>
+          </div>
+          {/* Active category chip */}
+          {activeCategory && (
+            <button
+              onClick={() => handleCategory(null)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-action-bordeaux/10 text-action-bordeaux rounded-full text-xs font-bold border border-action-bordeaux/20 hover:bg-action-bordeaux hover:text-white transition-all cursor-pointer"
+            >
+              {activeCategory.name}
+              <FiX size={12} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -339,8 +385,7 @@ const Shop = () => {
           </div>
 
           {/* Products Grid */}
-          {isLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {isLoading ? (            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="rounded-2xl bg-white border border-logo-rose/10 overflow-hidden animate-pulse">
                   <div className="aspect-[4/5] bg-logo-rose/5" />
@@ -351,7 +396,7 @@ const Shop = () => {
                 </div>
               ))}
             </div>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <div className="min-h-[360px] bg-white rounded-3xl border border-logo-rose/10 flex flex-col items-center justify-center text-center p-8">
               <FiImage size={44} className="text-logo-rose/30 mb-4" />
               <h3 className="font-serif text-xl text-logo-black mb-2">No Products Found</h3>
@@ -365,7 +410,7 @@ const Shop = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {products.map((product) => {
+              {filteredProducts.map((product) => {
                 const secondImg = product.images && product.images.length > 1 ? product.images[1].image_url : null;
                 const coverImg = product.image_url || (product.images && product.images[0]?.image_url) || null;
                 const displayImg = hoveredId === product.id && secondImg ? secondImg : coverImg;
@@ -418,11 +463,11 @@ const Shop = () => {
                             {product.name}
                           </h3>
                           <span className="font-sans font-bold text-action-bordeaux text-sm">
-                            ${product.price.toFixed(2)}
+                            PKR {product.price.toLocaleString()}
                           </span>
                         </div>
                         <button
-                          onClick={(e) => handleAddCart(product.id, e)}
+                          onClick={(e) => handleAddCart(product, e)}
                           disabled={product.stock === 0}
                           className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
                             cartId === product.id
@@ -598,6 +643,58 @@ const Shop = () => {
                 className="w-full py-3 bg-action-bordeaux text-white rounded-full font-bold text-xs uppercase tracking-widest cursor-pointer hover:bg-[#460416] transition-all mt-4">
                 Apply Filters
               </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Auth Gate Modal ── */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[300]"
+              onClick={() => setShowAuthModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+              className="fixed inset-0 z-[301] flex items-center justify-center p-4 pointer-events-none"
+            >
+              <div className="pointer-events-auto bg-white rounded-3xl shadow-2xl border border-logo-rose/15 p-8 w-full max-w-sm text-center">
+                <div className="w-14 h-14 rounded-2xl bg-logo-rose/10 flex items-center justify-center mx-auto mb-4">
+                  <FiLock size={26} className="text-action-bordeaux" />
+                </div>
+                <h3 className="font-serif text-xl text-logo-black mb-2">Sign In Required</h3>
+                <p className="font-sans text-sm text-logo-black/60 leading-relaxed mb-6">
+                  Please sign in to add items to your bag.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowAuthModal(false)}
+                    className="flex-1 py-2.5 border border-logo-rose/20 rounded-xl text-sm font-semibold text-logo-black hover:bg-logo-rose/5 transition-all cursor-pointer font-sans"
+                  >
+                    Cancel
+                  </button>
+                  <Link
+                    to="/login"
+                    onClick={() => setShowAuthModal(false)}
+                    className="flex-1 py-2.5 bg-action-bordeaux hover:bg-[#460416] text-white rounded-xl text-sm font-semibold transition-all cursor-pointer font-sans flex items-center justify-center"
+                  >
+                    Sign In
+                  </Link>
+                </div>
+                <Link
+                  to="/signup"
+                  onClick={() => setShowAuthModal(false)}
+                  className="block mt-3 text-xs text-logo-rose hover:text-action-bordeaux transition-colors font-sans font-medium"
+                >
+                  Don't have an account? Sign Up
+                </Link>
+              </div>
             </motion.div>
           </>
         )}

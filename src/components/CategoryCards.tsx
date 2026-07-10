@@ -88,18 +88,18 @@ const CategoryCards = () => {
   }
 
   return (
-    <section className="max-w-[1600px] flex flex-col justify-between items-center mx-auto px-6 md:px-12 lg:px-16 py-16 pt-0">
+    <section className="max-w-[1600px] flex flex-col justify-between items-center mx-auto px-6 md:px-12 lg:px-16 py-16 pt-0 text-center">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="mb-10 w-full"
+        className="mb-10 w-full flex flex-col items-center"
       >
-        <h2 className="font-serif !text-4xl sm:!text-5xl md:!text-6xl lg:!text-5xl! text-logo-black text-center mb-4">
+        <h2 className="font-serif !text-4xl sm:!text-5xl md:!text-6xl lg:!text-5xl! text-logo-black text-center mb-4 w-full">
           Explore Collections
         </h2>
-        <p className="font-sans pt-3 text-logo-black/70 text-xl text-center max-w-2xl mx-auto">
+        <p className="font-sans pt-3 text-logo-black/70 text-xl text-center max-w-2xl w-full mx-auto">
           Discover our curated categories, each designed to bring elegance and style to your wardrobe
         </p>
       </motion.div>

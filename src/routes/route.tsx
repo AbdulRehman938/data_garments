@@ -8,139 +8,103 @@ import AdminProducts from '../pages/admin/AdminProducts';
 import AdminAddProduct from '../pages/admin/AdminAddProduct';
 import AdminUsers from '../pages/admin/AdminUsers';
 import AdminSales from '../pages/admin/AdminSales';
+import AdminBulkUpload from '../pages/admin/AdminBulkUpload';
+import AdminServices from '../pages/admin/AdminServices';
+import AdminOrders from '../pages/admin/AdminOrders';
+import AdminBestSellers from '../pages/admin/AdminBestSellers';
 import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
+import Wishlist from '../pages/Wishlist';
+import Checkout from '../pages/Checkout';
+import About from '../pages/About';
+import Contact from '../pages/Contact';
+import Privacy from '../pages/Privacy';
+import Terms from '../pages/Terms';
 
-const MainLayout = () => {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-grow">
-        <Outlet />
-      </main>
-      <Footer />
-    </div>
-  );
-};
+const MainLayout = () => (
+  <div className="flex flex-col min-h-screen">
+    <Header />
+    <main className="flex-grow"><Outlet /></main>
+    <Footer />
+  </div>
+);
 
-const AuthLayout = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div className="min-h-screen flex flex-col bg-bg-silk-glow">
-      <Header />
-      <div className="w-full flex-grow flex items-center justify-center px-4 py-8 md:py-5 lg:py-10">
-        {children}
-      </div>
+const AuthLayout = ({ children }: { children: React.ReactNode }) => (
+  <div className="min-h-screen flex flex-col bg-bg-silk-glow">
+    <Header />
+    <div className="w-full flex-grow flex items-center justify-center px-4 py-8 md:py-5 lg:py-10">
+      {children}
     </div>
-  );
-};
+  </div>
+);
 
 export const router = createBrowserRouter([
+  /* ── Public routes with Header + Footer ── */
   {
     path: '/',
     element: <MainLayout />,
     children: [
-      {
-        index: true,
-        element: <HomePage />,
-      },
-      {
-        path: 'shop',
-        element: <Shop />,
-      },
-      {
-        path: 'product/:id',
-        element: <ProductDetail />,
-      },
+      { index: true, element: <HomePage /> },
+      { path: 'shop', element: <Shop /> },
+      { path: 'product/:id', element: <ProductDetail /> },
+      { path: 'checkout', element: <Checkout /> },
+      { path: 'about', element: <About /> },
+      { path: 'contact', element: <Contact /> },
+      { path: 'privacy', element: <Privacy /> },
+      { path: 'terms', element: <Terms /> },
+      { path: 'lookbook', element: <Shop /> }, // redirect lookbook → shop
     ],
   },
+
+  /* ── Auth routes (Header only, centered content) ── */
   {
     path: '/login',
-    element: (
-      <AuthLayout>
-        <Login />
-      </AuthLayout>
-    ),
+    element: <AuthLayout><Login /></AuthLayout>,
   },
   {
     path: '/signup',
-    element: (
-      <AuthLayout>
-        <Signup />
-      </AuthLayout>
-    ),
+    element: <AuthLayout><Signup /></AuthLayout>,
   },
   {
     path: '/verify-otp',
-    element: (
-      <AuthLayout>
-        <VerifyOtp />
-      </AuthLayout>
-    ),
+    element: <AuthLayout><VerifyOtp /></AuthLayout>,
   },
   {
     path: '/forgot-password',
-    element: (
-      <AuthLayout>
-        <ForgotPassword />
-      </AuthLayout>
-    ),
+    element: <AuthLayout><ForgotPassword /></AuthLayout>,
   },
   {
     path: '/update-password',
-    element: (
-      <AuthLayout>
-        <UpdatePassword />
-      </AuthLayout>
-    ),
+    element: <AuthLayout><UpdatePassword /></AuthLayout>,
   },
   {
     path: '/profile-settings',
-    element: (
-      <AuthLayout>
-        <ProfileSettings />
-      </AuthLayout>
-    ),
+    element: <AuthLayout><ProfileSettings /></AuthLayout>,
   },
+  {
+    path: '/wishlist',
+    element: <AuthLayout><Wishlist /></AuthLayout>,
+  },
+
+  /* ── Admin routes ── */
   {
     path: '/admin',
     element: <AdminDashboard />,
     children: [
-      {
-        index: true,
-        element: <AdminDashboard />,
-      },
-      {
-        path: 'dashboard',
-        element: <AdminDashboard />,
-      },
-      {
-        path: 'categories',
-        element: <AdminCategories />,
-      },
-      {
-        path: 'products',
-        element: <AdminProducts />,
-      },
-      {
-        path: 'products/add',
-        element: <AdminAddProduct />,
-      },
-      {
-        path: 'users',
-        element: <AdminUsers />,
-      },
-      {
-        path: 'sales',
-        element: <AdminSales />,
-      },
-      {
-        path: 'profile-settings',
-        element: <ProfileSettings />,
-      },
+      { index: true,                  element: null },            // dashboard renders inline
+      { path: 'dashboard',            element: null },
+      { path: 'categories',           element: <AdminCategories /> },
+      { path: 'products',             element: <AdminProducts /> },
+      { path: 'products/add',         element: <AdminAddProduct /> },
+      { path: 'bulk-upload',          element: <AdminBulkUpload /> },
+      { path: 'services',             element: <AdminServices /> },
+      { path: 'orders',               element: <AdminOrders /> },
+      { path: 'best-sellers',         element: <AdminBestSellers /> },
+      { path: 'users',                element: <AdminUsers /> },
+      { path: 'sales',                element: <AdminSales /> },
+      { path: 'profile-settings',     element: <ProfileSettings /> },
     ],
   },
-  {
-    path: '*',
-    element: <NotFound />,
-  },
+
+  { path: '*', element: <NotFound /> },
 ]);

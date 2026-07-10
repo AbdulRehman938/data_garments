@@ -1,4 +1,4 @@
-import { Hero, CategoryCards } from '../components';
+import { Hero, CategoryCards, BestSellers } from '../components';
 import { useLenis } from '../hooks/useLenis';
 
 export const HomePage = () => {
@@ -8,6 +8,7 @@ export const HomePage = () => {
     <div className="font-sans">
       <Hero />
       <CategoryCards />
+      <BestSellers />
     </div>
   );
 };

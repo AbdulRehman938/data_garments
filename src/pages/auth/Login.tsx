@@ -44,20 +44,20 @@ const Login = () => {
           .single();
 
         if (error || !user) {
-          alert('Invalid credentials');
+          formik.setStatus('Invalid credentials. Please check your details and try again.');
           return;
         }
 
         // Verify password
         if (!user.password) {
-          alert('Please reset your password. Your account was created before password verification was implemented.');
+          formik.setStatus('Please reset your password. Visit Forgot Password to continue.');
           return;
         }
 
         const isPasswordValid = await verifyPassword(values.password, user.password);
         
         if (!isPasswordValid) {
-          alert('Invalid credentials');
+          formik.setStatus('Invalid credentials. Please check your details and try again.');
           return;
         }
 
@@ -79,13 +79,14 @@ const Login = () => {
         }
       } catch (error) {
         console.error('Login error:', error);
-        alert('An error occurred during login');
+        formik.setStatus('An error occurred. Please try again.');
       }
     },
   });
 
   const handleToggleLoginType = (type: 'email' | 'username') => {
     setLoginType(type);
+    formik.setStatus(undefined);
     formik.setFieldError('email', undefined);
     formik.setFieldError('username', undefined);
     formik.setFieldTouched('email', false);
@@ -222,6 +223,14 @@ const Login = () => {
               Forgot Password?
             </Link>
           </div>
+
+          {/* Status error (replaces alert) */}
+          {formik.status && (
+            <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-sans">
+              <span className="shrink-0">⚠️</span>
+              {formik.status}
+            </div>
+          )}
 
           {/* Submit Button */}
           <motion.button

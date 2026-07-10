@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FiSearch, FiPhone, FiMapPin, FiCheck, FiX } from 'react-icons/fi';
 import { supabase } from '../../utils/supabase';
+import { useToast } from '../../components/common/Toast';
 
 interface User {
   id: string;
@@ -15,6 +16,7 @@ interface User {
 }
 
 const AdminUsers = () => {
+  const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,7 +52,7 @@ const AdminUsers = () => {
       fetchUsers();
     } catch (error: any) {
       console.error('Error updating user:', error);
-      alert(error.message || 'Failed to update user');
+      toast(error.message || 'Failed to update user', 'error', 'Update Failed');
     }
   };
 
