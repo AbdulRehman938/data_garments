@@ -46,6 +46,7 @@ const AdminCategories = () => {
 
   // Featured categories panel state
   const [featuredIds, setFeaturedIds] = useState<string[]>([]);
+  const [lowStockThresholds, setLowStockThresholds] = useState<Record<string, number>>({});
   const [savingFeatured, setSavingFeatured] = useState(false);
   const [featuredSaved, setFeaturedSaved] = useState(false);
 
@@ -86,8 +87,10 @@ const AdminCategories = () => {
         try {
           const parsed = JSON.parse(data.description);
           setFeaturedIds(Array.isArray(parsed.featured) ? parsed.featured : []);
+          setLowStockThresholds(parsed.lowStockThresholds || {});
         } catch {
           setFeaturedIds([]);
+          setLowStockThresholds({});
         }
       }
     } catch (error) {
@@ -98,7 +101,10 @@ const AdminCategories = () => {
   const handleSaveFeatured = async () => {
     setSavingFeatured(true);
     try {
-      const settingsJson = JSON.stringify({ featured: featuredIds });
+      const settingsJson = JSON.stringify({ 
+        featured: featuredIds,
+        lowStockThresholds
+      });
       const { data: existing } = await supabase
         .from('categories')
         .select('id')
@@ -332,6 +338,7 @@ const AdminCategories = () => {
                     <tr>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Image</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Name</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Low Stock Threshold</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Description</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Featured</th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-logo-black">Created</th>
@@ -351,6 +358,20 @@ const AdminCategories = () => {
                           )}
                         </td>
                         <td className="px-6 py-4 font-medium text-logo-black">{category.name}</td>
+                        <td className="px-6 py-4">
+                          <input
+                            type="number"
+                            min="0"
+                            value={lowStockThresholds[category.id] ?? 5}
+                            onChange={(e) => {
+                              setLowStockThresholds(prev => ({
+                                ...prev,
+                                [category.id]: Math.max(0, parseInt(e.target.value) || 0)
+                              }));
+                            }}
+                            className="w-20 px-2 py-1 border border-logo-rose/20 rounded-lg text-sm focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20"
+                          />
+                        </td>
                         <td className="px-6 py-4 text-logo-black/60 max-w-xs truncate">{category.description || '-'}</td>
                         <td className="px-6 py-4">
                           {featuredIds.includes(category.id) ? (
@@ -393,6 +414,21 @@ const AdminCategories = () => {
                             <FiStar size={9} /> Featured
                           </span>
                         )}
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className="text-xs text-logo-black/50 font-semibold">Low Stock Threshold:</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={lowStockThresholds[category.id] ?? 5}
+                          onChange={(e) => {
+                            setLowStockThresholds(prev => ({
+                              ...prev,
+                              [category.id]: Math.max(0, parseInt(e.target.value) || 0)
+                            }));
+                          }}
+                          className="w-16 px-2 py-1 border border-logo-rose/20 rounded-lg text-sm focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20"
+                        />
                       </div>
                       {category.description && <p className="text-sm text-logo-black/60 mt-0.5 line-clamp-2">{category.description}</p>}
                       <p className="text-xs text-logo-black/40 mt-1">{new Date(category.created_at).toLocaleDateString()}</p>

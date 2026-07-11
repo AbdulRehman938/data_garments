@@ -231,7 +231,7 @@ const AdminBulkUpload = () => {
   const errorRows = new Set(validationErrors.map((e) => e.row - 2));
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6">
       {/* ── Page Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>

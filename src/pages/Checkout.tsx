@@ -6,12 +6,22 @@ import { FaWhatsapp } from 'react-icons/fa';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../utils/supabase';
 
 const WHATSAPP_NUMBER = '923167797719';
 
+// Calculate tiered delivery charge based on number of items
+const calculateDeliveryCharge = (totalItems: number): number => {
+  const baseCharge = 350;
+  if (totalItems <= 3) return baseCharge;
+  // Add 100 for each additional item beyond 3
+  return baseCharge + (totalItems - 3) * 100;
+};
+
 const DELIVERY_OPTIONS = [
-  { id: 'standard', label: 'Standard Delivery', description: 'Nationwide — 3–5 business days', charge: 200 },
-  { id: 'express', label: 'Express Delivery', description: 'Nationwide — 1–2 business days', charge: 400 },
+  { id: 'standard', label: 'Standard Delivery', description: 'Nationwide — 3–5 business days' },
+  { id: 'express', label: 'Express Delivery', description: 'Nationwide — 1–2 business days', extraCharge: 150 },
 ];
 
 // Comprehensive list of Pakistani cities for validation
@@ -99,6 +109,7 @@ const checkoutSchema = Yup.object({
 const Checkout = () => {
   const navigate = useNavigate();
   const { cartItems, cartTotal, clearCart } = useCart();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -116,8 +127,15 @@ const Checkout = () => {
       if (cartItems.length === 0) return;
       setIsSubmitting(true);
 
+      // Calculate total number of items in cart
+      const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+      
+      // Calculate base delivery charge
+      const baseDeliveryCharge = calculateDeliveryCharge(totalItems);
+      
       const deliveryOption = DELIVERY_OPTIONS.find((d) => d.id === values.delivery)!;
-      const grandTotal = cartTotal + deliveryOption.charge;
+      const deliveryCharge = baseDeliveryCharge + (deliveryOption.extraCharge || 0);
+      const grandTotal = cartTotal + deliveryCharge;
 
       // Normalize phone number to 03XXXXXXXXX format
       const normalizePhone = (phone: string) => {
@@ -151,35 +169,72 @@ const Checkout = () => {
         `*Order Items*`,
         itemLines,
         ``,
-        `*Delivery:* ${deliveryOption.label} — PKR ${deliveryOption.charge.toLocaleString()}`,
+        `*Delivery:* ${deliveryOption.label} — PKR ${deliveryCharge.toLocaleString()}`,
         `*Products Total:* PKR ${cartTotal.toLocaleString()}`,
         `*Grand Total:* PKR ${grandTotal.toLocaleString()}`,
         ``,
-        `⚠️ Delivery charges (PKR ${deliveryOption.charge.toLocaleString()}) must be paid in advance.`,
-        `Remaining amount (PKR ${(grandTotal - deliveryOption.charge).toLocaleString()}) will be collected via Cash on Delivery.`,
+        `⚠️ Delivery charges (PKR ${deliveryCharge.toLocaleString()}) must be paid in advance.`,
+        `Remaining amount (PKR ${cartTotal.toLocaleString()}) will be collected via Cash on Delivery.`,
       ].filter((l) => l !== '').join('\n');
 
       const encodedMsg = encodeURIComponent(message);
       const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMsg}`;
 
-      // Clear cart and show success FIRST
-      clearCart();
-      setShowSuccess(true);
+      try {
+        // Save order to Supabase FIRST
+        const orderItems = cartItems.map(item => ({
+          product_id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          size: item.size || null,
+          color: item.color || null,
+        }));
 
-      // Open WhatsApp immediately
-      window.open(waUrl, '_blank');
-      
-      // Navigate to shop after delay
-      setTimeout(() => navigate('/shop'), 3000);
+        const { error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            user_id: user?.id || null,
+            customer_name: values.full_name,
+            customer_phone: normalizedPhone,
+            customer_address: values.address,
+            customer_city: values.city,
+            customer_note: values.note || null,
+            delivery_method: deliveryOption.label,
+            items: orderItems,
+            total_amount: grandTotal,
+            status: 'pending',
+          });
 
-      // NOTE: Supabase insertion disabled temporarily (schema cache issue)
-      // WhatsApp flow is fully functional!
-      setIsSubmitting(false);
+        if (orderError) {
+          console.error('Supabase order error:', orderError);
+          throw orderError;
+        }
+
+        // Clear cart and show success
+        clearCart();
+        setShowSuccess(true);
+
+        // Open WhatsApp
+        window.open(waUrl, '_blank');
+        
+        // Navigate to shop after delay
+        setTimeout(() => navigate('/shop'), 3000);
+      } catch (error) {
+        console.error('Checkout error:', error);
+        alert('Something went wrong. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
     },
   });
 
+  // Calculate delivery charge for display
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const selectedDelivery = DELIVERY_OPTIONS.find((d) => d.id === formik.values.delivery) || DELIVERY_OPTIONS[0];
-  const grandTotal = cartTotal + selectedDelivery.charge;
+  const baseDeliveryCharge = calculateDeliveryCharge(totalItems);
+  const deliveryCharge = baseDeliveryCharge + (selectedDelivery.extraCharge || 0);
+  const grandTotal = cartTotal + deliveryCharge;
 
   const fErr = (f: string) =>
     (formik.touched as any)[f] && (formik.errors as any)[f]
@@ -304,29 +359,32 @@ const Checkout = () => {
                 Delivery Method
               </h2>
               <div className="space-y-3">
-                {DELIVERY_OPTIONS.map((opt) => (
-                  <button key={opt.id} type="button"
-                    onClick={() => formik.setFieldValue('delivery', opt.id)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                      formik.values.delivery === opt.id
-                        ? 'border-action-bordeaux bg-action-bordeaux/5'
-                        : 'border-logo-rose/15 hover:border-logo-rose/40'
-                    }`}
-                  >
-                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                      formik.values.delivery === opt.id ? 'border-action-bordeaux' : 'border-logo-rose/30'
-                    }`}>
-                      {formik.values.delivery === opt.id && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-action-bordeaux" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-logo-black">{opt.label}</p>
-                      <p className="text-xs text-logo-black/50">{opt.description}</p>
-                    </div>
-                    <span className="font-bold text-sm text-action-bordeaux shrink-0">PKR {opt.charge.toLocaleString()}</span>
-                  </button>
-                ))}
+                {DELIVERY_OPTIONS.map((opt) => {
+                  const optionCharge = baseDeliveryCharge + (opt.extraCharge || 0);
+                  return (
+                    <button key={opt.id} type="button"
+                      onClick={() => formik.setFieldValue('delivery', opt.id)}
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                        formik.values.delivery === opt.id
+                          ? 'border-action-bordeaux bg-action-bordeaux/5'
+                          : 'border-logo-rose/15 hover:border-logo-rose/40'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                        formik.values.delivery === opt.id ? 'border-action-bordeaux' : 'border-logo-rose/30'
+                      }`}>
+                        {formik.values.delivery === opt.id && (
+                          <div className="w-2.5 h-2.5 rounded-full bg-action-bordeaux" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-logo-black">{opt.label}</p>
+                        <p className="text-xs text-logo-black/50">{opt.description}</p>
+                      </div>
+                      <span className="font-bold text-sm text-action-bordeaux shrink-0">PKR {optionCharge.toLocaleString()}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* COD Notice */}
@@ -384,7 +442,7 @@ const Checkout = () => {
               </div>
               <div className="flex justify-between text-sm text-logo-black/70">
                 <span>Delivery ({selectedDelivery.label})</span>
-                <span className="font-semibold">PKR {selectedDelivery.charge.toLocaleString()}</span>
+                <span className="font-semibold">PKR {deliveryCharge.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-base font-bold text-logo-black border-t border-logo-rose/10 pt-2 mt-1">
                 <span>Grand Total</span>

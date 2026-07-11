@@ -1,4 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useAuth } from './AuthContext';
+import { supabase } from '../utils/supabase';
 
 export interface CartItem {
   id: string;
@@ -15,31 +17,104 @@ interface CartContextType {
   cartCount: number;
   cartTotal: number;
   isCartOpen: boolean;
+  isLoadingCart: boolean;
   addToCart: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
-  removeFromCart: (id: string) => void;
-  changeQty: (id: string, delta: number) => void;
+  removeFromCart: (id: string, options?: { size?: string; color?: string }) => void;
+  changeQty: (id: string, delta: number, options?: { size?: string; color?: string }) => void;
   clearCart: () => void;
+  saveCartToDB: () => Promise<void>;
   openCart: () => void;
   closeCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_KEY = 'dg_cart';
+const CART_KEY_PREFIX = 'dg_cart_';
+
+const getCartKey = (userId: string | null) => {
+  if (userId) {
+    return `${CART_KEY_PREFIX}${userId}`;
+  }
+  return `${CART_KEY_PREFIX}guest`;
+};
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
+  const cartKey = getCartKey(user?.id || null);
+
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     try {
-      const stored = localStorage.getItem(CART_KEY);
+      const key = getCartKey(user?.id || null);
+      const stored = localStorage.getItem(key);
       return stored ? JSON.parse(stored) : [];
     } catch { return []; }
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isLoadingCart, setIsLoadingCart] = useState(false);
+
+  // Load saved cart from DB when user logs in
+  useEffect(() => {
+    const loadCartFromDB = async () => {
+      if (!user?.id) {
+        // No user - load guest cart from localStorage
+        try {
+          const key = getCartKey(null);
+          const stored = localStorage.getItem(key);
+          setCartItems(stored ? JSON.parse(stored) : []);
+        } catch {
+          setCartItems([]);
+        }
+        return;
+      }
+
+      setIsLoadingCart(true);
+      try {
+        // First try to load from DB
+        const { data, error } = await supabase
+          .from('carts')
+          .select('cart_data')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data?.cart_data) {
+          const dbCart = data.cart_data as CartItem[];
+          setCartItems(dbCart);
+          // Also sync to localStorage
+          localStorage.setItem(cartKey, JSON.stringify(dbCart));
+        } else {
+          // No cart in DB - check localStorage
+          try {
+            const key = getCartKey(user.id);
+            const stored = localStorage.getItem(key);
+            setCartItems(stored ? JSON.parse(stored) : []);
+          } catch {
+            setCartItems([]);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading cart from DB:', err);
+        // Fallback to localStorage if DB fails
+        try {
+          const key = getCartKey(user.id);
+          const stored = localStorage.getItem(key);
+          setCartItems(stored ? JSON.parse(stored) : []);
+        } catch {
+          setCartItems([]);
+        }
+      } finally {
+        setIsLoadingCart(false);
+      }
+    };
+
+    loadCartFromDB();
+  }, [user?.id, cartKey]);
 
   // Persist to localStorage
   useEffect(() => {
-    localStorage.setItem(CART_KEY, JSON.stringify(cartItems));
-  }, [cartItems]);
+    localStorage.setItem(cartKey, JSON.stringify(cartItems));
+  }, [cartItems, cartKey]);
 
   // Lock body scroll when cart open
   useEffect(() => {
@@ -62,17 +137,78 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     });
   }, []);
 
-  const removeFromCart = useCallback((id: string) => {
-    setCartItems((prev) => prev.filter((i) => i.id !== id));
+  const removeFromCart = useCallback((id: string, options?: { size?: string; color?: string }) => {
+    const { size, color } = options || {};
+    setCartItems((prev) => prev.filter((i) => {
+      const matchesId = i.id === id;
+      const matchesSize = (size === undefined) || (i.size === size);
+      const matchesColor = (color === undefined) || (i.color === color);
+      return !(matchesId && matchesSize && matchesColor);
+    }));
   }, []);
 
-  const changeQty = useCallback((id: string, delta: number) => {
+  const changeQty = useCallback((id: string, delta: number, options?: { size?: string; color?: string }) => {
+    const { size, color } = options || {};
     setCartItems((prev) =>
-      prev.map((i) => i.id === id ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i)
+      prev.map((i) => {
+        const matchesId = i.id === id;
+        const matchesSize = (size === undefined) || (i.size === size);
+        const matchesColor = (color === undefined) || (i.color === color);
+        if (matchesId && matchesSize && matchesColor) {
+          return { ...i, quantity: Math.max(1, i.quantity + delta) };
+        }
+        return i;
+      })
     );
   }, []);
 
-  const clearCart = useCallback(() => setCartItems([]), []);
+  const clearCart = useCallback(() => {
+    setCartItems([]);
+    // Also clear from localStorage
+    if (user) {
+      localStorage.removeItem(getCartKey(user.id));
+    } else {
+      localStorage.removeItem(getCartKey(null));
+    }
+  }, [user]);
+
+  const saveCartToDB = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      // Check if cart exists for user
+      const { data: existingCart } = await supabase
+        .from('carts')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingCart) {
+        // Update existing cart
+        await supabase
+          .from('carts')
+          .update({ 
+            cart_data: cartItems, 
+            updated_at: new Date().toISOString() 
+          })
+          .eq('id', existingCart.id);
+      } else {
+        // Insert new cart
+        await supabase
+          .from('carts')
+          .insert({ 
+            user_id: user.id, 
+            cart_data: cartItems,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString() 
+          });
+      }
+    } catch (err) {
+      console.error('Error saving cart to DB:', err);
+      throw err;
+    }
+  }, [user?.id, cartItems]);
+
   const openCart  = useCallback(() => setIsCartOpen(true), []);
   const closeCart = useCallback(() => setIsCartOpen(false), []);
 
@@ -80,7 +216,20 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const cartTotal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ cartItems, cartCount, cartTotal, isCartOpen, addToCart, removeFromCart, changeQty, clearCart, openCart, closeCart }}>
+    <CartContext.Provider value={{ 
+      cartItems, 
+      cartCount, 
+      cartTotal, 
+      isCartOpen, 
+      isLoadingCart,
+      addToCart, 
+      removeFromCart, 
+      changeQty, 
+      clearCart,
+      saveCartToDB,
+      openCart, 
+      closeCart 
+    }}>
       {children}
     </CartContext.Provider>
   );

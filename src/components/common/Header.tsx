@@ -42,7 +42,7 @@ const Header = () => {
   const {
     cartItems, cartCount, cartTotal,
     isCartOpen, addToCart: ctxAddToCart,
-    removeFromCart, changeQty, clearCart,
+    removeFromCart, changeQty, clearCart, saveCartToDB,
     openCart, closeCart,
   } = useCart();
   const navigate = useNavigate();
@@ -139,7 +139,16 @@ const Header = () => {
       return true;
     });
 
-  const handleLogout = () => { logout(); navigate('/'); };
+  const handleLogout = async () => {
+    await logout(async () => {
+      if (cartItems.length > 0) {
+        await saveCartToDB();
+        // Clear cart from localStorage
+        clearCart();
+      }
+    });
+    navigate('/');
+  };
 
   return (
     <>
@@ -508,8 +517,8 @@ const Header = () => {
                       <p className="font-sans text-sm text-logo-black/40">No items match your search</p>
                     </div>
                   ) : (
-                    filteredCartItems.map((item) => (
-                      <div key={item.id} className="flex items-center gap-3 p-3 bg-bg-silk-glow/30 rounded-2xl border border-logo-rose/[0.08]">
+                    filteredCartItems.map((item, index) => (
+                      <div key={`${item.id}-${item.size || ''}-${item.color || ''}-${index}`} className="flex items-center gap-3 p-3 bg-bg-silk-glow/30 rounded-2xl border border-logo-rose/[0.08]">
                         {item.image_url ? (
                           <img src={item.image_url} alt={item.name} className="w-16 h-16 object-cover rounded-xl shrink-0 border border-logo-rose/10" />
                         ) : (
@@ -519,12 +528,12 @@ const Header = () => {
                           <p className="font-sans text-sm font-semibold text-logo-black truncate">{item.name}</p>
                           <p className="font-sans text-xs text-action-bordeaux font-bold mt-0.5">PKR {(item.price * item.quantity).toLocaleString()}</p>
                           <div className="flex items-center gap-2 mt-2">
-                            <button onClick={() => changeQty(item.id, -1)} className="w-6 h-6 rounded-full border border-logo-rose/20 flex items-center justify-center hover:bg-logo-rose/10 transition-colors cursor-pointer"><FiMinus size={10} /></button>
+                            <button onClick={() => changeQty(item.id, -1, { size: item.size, color: item.color })} className="w-6 h-6 rounded-full border border-logo-rose/20 flex items-center justify-center hover:bg-logo-rose/10 transition-colors cursor-pointer"><FiMinus size={10} /></button>
                             <span className="font-sans text-sm font-bold text-logo-black w-4 text-center">{item.quantity}</span>
-                            <button onClick={() => changeQty(item.id, 1)} className="w-6 h-6 rounded-full border border-logo-rose/20 flex items-center justify-center hover:bg-logo-rose/10 transition-colors cursor-pointer"><FiPlus size={10} /></button>
+                            <button onClick={() => changeQty(item.id, 1, { size: item.size, color: item.color })} className="w-6 h-6 rounded-full border border-logo-rose/20 flex items-center justify-center hover:bg-logo-rose/10 transition-colors cursor-pointer"><FiPlus size={10} /></button>
                           </div>
                         </div>
-                        <button onClick={() => removeFromCart(item.id)} className="p-2 text-logo-rose/50 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors cursor-pointer shrink-0"><FiTrash2 size={15} /></button>
+                        <button onClick={() => removeFromCart(item.id, { size: item.size, color: item.color })} className="p-2 text-logo-rose/50 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors cursor-pointer shrink-0"><FiTrash2 size={15} /></button>
                       </div>
                     ))
                   )}

@@ -111,7 +111,7 @@ const AdminBestSellers = () => {
   const autoCount = Math.max(0, MAX_SLOTS - pinnedIds.length);
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-serif text-2xl md:text-3xl text-logo-black">Best Sellers</h1>

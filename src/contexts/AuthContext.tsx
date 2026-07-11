@@ -12,7 +12,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   login: (user: User) => void;
-  logout: () => void;
+  logout: (beforeLogout?: () => Promise<void>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,7 +38,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  const logout = () => {
+  const logout = async (beforeLogout?: () => Promise<void>) => {
+    // Run beforeLogout callback if provided
+    if (beforeLogout) {
+      await beforeLogout();
+    }
+    
     setUser(null);
     localStorage.removeItem('user');
   };
@@ -50,8 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isAuthenticated: !!user,
         login,
         logout,
-      }}
-    >
+      }}>
       {children}
     </AuthContext.Provider>
   );

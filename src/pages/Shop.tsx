@@ -21,6 +21,7 @@ interface Product {
   name: string;
   description: string | null;
   price: number;
+  original_price: number | null;
   category_id: string | null;
   image_url: string | null;
   stock: number;
@@ -462,9 +463,21 @@ const Shop = () => {
                           <h3 className="font-serif text-sm font-semibold text-logo-black line-clamp-1 group-hover:text-action-bordeaux transition-colors">
                             {product.name}
                           </h3>
-                          <span className="font-sans font-bold text-action-bordeaux text-sm">
-                            PKR {product.price.toLocaleString()}
-                          </span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="font-sans font-bold text-action-bordeaux text-sm">
+                              PKR {product.price.toLocaleString()}
+                            </span>
+                            {product.original_price && (
+                              <>
+                                <span className="font-sans text-sm text-logo-black/40 line-through">
+                                  PKR {product.original_price.toLocaleString()}
+                                </span>
+                                <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                                  {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% OFF
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
                         <button
                           onClick={(e) => handleAddCart(product, e)}

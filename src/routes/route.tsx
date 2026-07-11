@@ -14,6 +14,7 @@ import AdminOrders from '../pages/admin/AdminOrders';
 import AdminBestSellers from '../pages/admin/AdminBestSellers';
 import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
+import ScrollToTop from '../components/common/ScrollToTop';
 import Wishlist from '../pages/Wishlist';
 import Checkout from '../pages/Checkout';
 import About from '../pages/About';
@@ -23,6 +24,7 @@ import Terms from '../pages/Terms';
 
 const MainLayout = () => (
   <div className="flex flex-col min-h-screen">
+    <ScrollToTop />
     <Header />
     <main className="flex-grow"><Outlet /></main>
     <Footer />
@@ -31,6 +33,7 @@ const MainLayout = () => (
 
 const AuthLayout = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen flex flex-col bg-bg-silk-glow">
+    <ScrollToTop />
     <Header />
     <div className="w-full flex-grow flex items-center justify-center px-4 py-8 md:py-5 lg:py-10">
       {children}

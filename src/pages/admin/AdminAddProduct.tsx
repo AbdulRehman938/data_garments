@@ -31,6 +31,9 @@ const productSchema = Yup.object({
     .matches(/^[a-zA-Z0-9\s\-&'.,()/]+$/, 'Only letters, numbers and basic punctuation').required('Required'),
   description: Yup.string().trim().min(20, 'At least 20 characters').max(1000, 'Max 1000 characters').optional(),
   price: Yup.number().typeError('Must be a number').positive('Must be > 0').min(1, 'Min PKR 1').max(9999999, 'Max PKR 9,999,999').required('Required'),
+  original_price: Yup.number().typeError('Must be a number').positive('Must be > 0').min(1, 'Min PKR 1').max(9999999, 'Max PKR 9,999,999').optional().test('greater-than-price', 'Original price must be higher than discounted price', function(value) {
+    return !value || value > this.parent.price;
+  }),
   stock: Yup.number().typeError('Must be a number').integer('Whole number').min(0, 'Cannot be negative').max(99999, 'Max 99,999').required('Required'),
   category_id: Yup.string().required('Please select a category'),
   // product detail fields
@@ -56,6 +59,14 @@ const AdminAddProduct = () => {
 
   useEffect(() => { fetchCategories(); fetchServices(); }, []);
 
+  useEffect(() => {
+    // Auto-select the first active service as default
+    const activeServices = services.filter(s => s.is_active);
+    if (activeServices.length > 0 && formik.values.service_ids.length === 0) {
+      formik.setFieldValue('service_ids', [activeServices[0].id]);
+    }
+  }, [services]);
+
   const fetchCategories = async () => {
     try {
       const { data, error } = await supabase.from('categories').select('id, name').not('name', 'ilike', '__SYSTEM_%');
@@ -74,7 +85,7 @@ const AdminAddProduct = () => {
 
   const formik = useFormik({
     initialValues: {
-      name: '', description: '', price: '', stock: '', category_id: '',
+      name: '', description: '', price: '', original_price: '', stock: '', category_id: '',
       colors: [] as string[], sizes: [] as string[],
       fabric: '', wear_type: '', trouser_type: '', styling: '',
       product_category: '', dupatta_fabric: '', trouser_fabric: '',
@@ -105,7 +116,9 @@ const AdminAddProduct = () => {
 
         const { data: newProduct, error: productError } = await supabase.from('products').insert({
           name: values.name.trim(), description: values.description.trim(),
-          price: parseFloat(values.price), category_id: values.category_id || null,
+          price: parseFloat(values.price), 
+          original_price: values.original_price ? parseFloat(values.original_price) : null,
+          category_id: values.category_id || null,
           stock: parseInt(values.stock), image_url: imageUrls[0],
           details: JSON.stringify(details),
         }).select().single();
@@ -155,7 +168,7 @@ const AdminAddProduct = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-logo-black mb-1.5">Price (PKR) *</label>
+                <label className="block text-sm font-semibold text-logo-black mb-1.5">Discounted Price (PKR) *</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-logo-black/50 text-sm font-semibold select-none">PKR</span>
                   <input type="number" name="price" step="1" min="1" max="9999999" placeholder="0"
@@ -163,6 +176,17 @@ const AdminAddProduct = () => {
                     className={`${inputCls('price')} pl-14`} />
                 </div>
                 <div className="h-4 mt-0.5"><span className="text-xs text-red-500">{fErr('price')}</span></div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-logo-black mb-1.5">Original Price (PKR) <span className="text-xs text-logo-black/50 font-normal">(optional, for strikethrough)</span></label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-logo-black/50 text-sm font-semibold select-none">PKR</span>
+                  <input type="number" name="original_price" step="1" min="1" max="9999999" placeholder="Leave empty for no discount"
+                    value={formik.values.original_price} onChange={formik.handleChange} onBlur={formik.handleBlur}
+                    className={`${inputCls('original_price')} pl-14`} />
+                </div>
+                <div className="h-4 mt-0.5"><span className="text-xs text-red-500">{fErr('original_price')}</span></div>
               </div>
 
               <div>

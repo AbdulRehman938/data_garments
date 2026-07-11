@@ -44,6 +44,7 @@ interface Product {
   name: string;
   description: string | null;
   price: number;
+  original_price: number | null;
   category_id: string | null;
   image_url: string | null;
   stock: number;
@@ -340,6 +341,16 @@ const ProductDetail = () => {
                 <span className="text-2xl font-bold text-action-bordeaux font-sans">
                   PKR {product.price.toLocaleString()}
                 </span>
+                {product.original_price && (
+                  <>
+                    <span className="text-xl font-bold text-logo-black/40 line-through font-sans">
+                      PKR {product.original_price.toLocaleString()}
+                    </span>
+                    <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full">
+                      {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% OFF
+                    </span>
+                  </>
+                )}
                 {product.stock > 0 && (
                   <span className="text-xs text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">In Stock</span>
                 )}
