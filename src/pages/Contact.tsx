@@ -116,7 +116,7 @@ const Contact = () => (
           animate={{ opacity: 1, x: 0 }} 
           transition={{ delay: 0.1 }}
         >
-          <div className="bg-gradient-to-br from-action-bordeaux to-[#460416] rounded-3xl p-8 md:p-10 text-white h-full flex flex-col justify-center">
+          <div className="bg-linear-to-br from-action-bordeaux to-[#460416] rounded-3xl p-8 md:p-10 text-white h-full flex flex-col justify-center">
             <div className="mb-8 text-white">
               
               <p className="text-white/70 leading-relaxed">

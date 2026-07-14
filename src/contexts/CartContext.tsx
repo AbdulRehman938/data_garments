@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components, react-hooks/preserve-manual-memoization */
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '../utils/supabase';

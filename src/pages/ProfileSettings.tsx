@@ -272,12 +272,12 @@ const ProfileSettings = () => {
   }
 
   return (
-    <div className="min-h-auto bg-bg-silk-glow px-4 py-0">
+    <div className="min-h-auto bg-bg-silk-glow px-2 md:px-4 py-0">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-3xl mx-auto"
+        className="w-full max-w-full md:max-w-3xl mx-auto px-2 md:px-0"
       >
         {/* Header */}
         <div className="mb-8">
@@ -314,7 +314,7 @@ const ProfileSettings = () => {
         </div>
 
         {/* Profile Card */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-logo-rose/20 p-6 md:p-8">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-logo-rose/20 p-4 md:p-6">
           {/* Profile Picture Section */}
           <div className="flex flex-col items-center justify-center mb-8">
             <input
@@ -442,7 +442,7 @@ const ProfileSettings = () => {
 
                 {/* Country Dropdown */}
                 {isDropdownOpen && (
-                  <div className="absolute left-0 top-[70px] w-64 max-h-56 bg-white border border-logo-rose/30 rounded-xl shadow-xl overflow-hidden flex flex-col z-50">
+                  <div className="absolute left-0 top-17.5 w-64 max-h-56 bg-white border border-logo-rose/30 rounded-xl shadow-xl overflow-hidden flex flex-col z-50">
                     <div className="p-2 border-b border-logo-rose/10 flex items-center gap-1 bg-bg-silk-glow/50">
                       <input
                         type="text"
@@ -452,7 +452,7 @@ const ProfileSettings = () => {
                         className="w-full bg-transparent border-none outline-none font-sans text-xs text-logo-black placeholder:text-logo-black/40"
                       />
                     </div>
-                    <div className="overflow-y-auto flex-grow py-1 bg-white">
+                    <div className="overflow-y-auto grow py-1 bg-white">
                       {filteredCountries.length > 0 ? (
                         filteredCountries.map((c) => (
                           <button
@@ -471,7 +471,7 @@ const ProfileSettings = () => {
                                 alt={c.code}
                                 className="w-5 h-3.5 object-cover rounded shadow-sm shrink-0"
                               />
-                              <span className="font-sans text-xs text-logo-black truncate max-w-[130px]">
+                              <span className="font-sans text-xs text-logo-black truncate max-w-32.5">
                                 {c.name}
                               </span>
                             </div>

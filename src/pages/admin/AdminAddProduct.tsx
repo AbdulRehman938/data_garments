@@ -347,7 +347,7 @@ const AdminAddProduct = () => {
             {selectedFiles.length > 0 && (
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mt-4">
                 {selectedFiles.map((file, index) => (
-                  <div key={index} className="relative aspect-[4/5] bg-bg-silk-glow rounded-xl overflow-hidden border border-logo-rose/10 shadow-sm">
+                  <div key={index} className="relative aspect-4/5 bg-bg-silk-glow rounded-xl overflow-hidden border border-logo-rose/10 shadow-sm">
                     <img src={URL.createObjectURL(file)} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
                     {index === 0 && <span className="absolute bottom-1 left-1 bg-action-bordeaux text-white text-[9px] font-bold px-2 py-0.5 rounded uppercase">Cover</span>}
                     <button type="button" onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}

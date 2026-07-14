@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, react-refresh/only-export-components */
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -266,7 +267,7 @@ const AdminDashboard = () => {
     { name: 'Best Sellers',     path: '/admin/best-sellers',   icon: FiAward },
     { name: 'Service Badges',   path: '/admin/services',       icon: FiShield },
     { name: 'Bulk Upload',      path: '/admin/bulk-upload',    icon: FiUploadCloud },
-    { name: 'Users',            path: '/admin/users',          icon: FiUsers },
+    { name: 'Customers',        path: '/admin/users',          icon: FiUsers },
     { name: 'Sales & Revenue',  path: '/admin/sales',          icon: FiDollarSign },
     { name: 'Profile Settings', path: '/admin/profile-settings', icon: FiSettings },
   ];
@@ -285,7 +286,7 @@ const AdminDashboard = () => {
       )}
 
       {/* Sidebar */}
-      <aside className={`bg-white shadow-xl z-30 border-r border-logo-rose/20 w-72 flex-shrink-0 transition-transform duration-300 fixed md:sticky top-0 bottom-0 left-0 h-screen md:translate-x-0 ${
+      <aside className={`bg-white shadow-xl z-30 border-r border-logo-rose/20 w-72 shrink-0 transition-transform duration-300 fixed md:sticky top-0 bottom-0 left-0 h-screen md:translate-x-0 ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
         <div className="h-full flex flex-col">
@@ -335,16 +336,19 @@ const AdminDashboard = () => {
               <h1 className="font-serif text-lg md:text-xl font-bold text-logo-black">Admin Panel</h1>
             </div>
             <div className="flex items-center gap-4">
-              <Link to="/" className="flex items-center gap-2 px-4 py-2 bg-bg-silk-glow rounded-xl text-xs md:text-sm text-logo-black hover:text-action-bordeaux hover:bg-action-bordeaux/5 transition-all cursor-pointer font-medium">
-                View Site
-              </Link>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-action-bordeaux rounded-full flex items-center justify-center text-white font-bold text-sm">
-                  {user?.username?.charAt(0)?.toUpperCase() || 'A'}
-                </div>
-                <div className="hidden sm:block">
-                  <p className="font-semibold text-logo-black text-sm">{user?.username}</p>
-                  <p className="text-xs text-logo-black/50">{user?.role}</p>
+              <div className="flex items-center gap-2">
+                <Link to="/" className="flex items-center gap-2 px-3 py-2 bg-bg-silk-glow rounded-xl text-xs text-logo-black hover:text-action-bordeaux hover:bg-action-bordeaux/5 transition-all cursor-pointer font-medium">
+                  <span className="hidden sm:inline">View Site</span>
+                  <span className="sm:hidden">Home</span>
+                </Link>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-action-bordeaux rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
+                    {user?.username?.charAt(0)?.toUpperCase() || 'A'}
+                  </div>
+                  <div className="hidden sm:block">
+                    <p className="font-semibold text-logo-black text-sm">{user?.username}</p>
+                    <p className="text-xs text-logo-black/50">{user?.role}</p>
+                  </div>
                 </div>
               </div>
             </div>

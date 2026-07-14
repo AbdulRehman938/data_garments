@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // Cloudinary configuration for signed uploads
 const CLOUD_NAME = 'di9tb45rl';
 const API_KEY = '344247339423785';

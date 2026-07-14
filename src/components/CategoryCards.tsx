@@ -18,10 +18,6 @@ const CategoryCards = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
   const fetchCategories = async () => {
     try {
       // 1. Fetch system settings to get featured category IDs
@@ -71,12 +67,16 @@ const CategoryCards = () => {
     }
   };
 
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
   if (isLoading) {
     return (
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 lg:px-16 py-12">
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {[...Array(5)].map((_, i) => (
-            <div key={i} className="aspect-[3/4] rounded-2xl bg-logo-rose/5 animate-pulse" />
+            <div key={i} className="aspect-3/4 rounded-2xl bg-logo-rose/5 animate-pulse" />
           ))}
         </div>
       </div>
@@ -96,7 +96,7 @@ const CategoryCards = () => {
         transition={{ duration: 0.6 }}
         className="mb-10 w-full flex flex-col items-center"
       >
-        <h2 className="font-serif !text-4xl sm:!text-5xl md:!text-6xl lg:!text-5xl! text-logo-black text-center mb-4 w-full">
+        <h2 className="font-serif text-4xl! sm:text-5xl! md:text-6xl! lg:!text-5xl! text-logo-black text-center mb-4 w-full">
           Explore Collections
         </h2>
         <p className="font-sans pt-3 text-logo-black/70 text-xl text-center max-w-2xl w-full mx-auto">
@@ -129,7 +129,7 @@ const CategoryCards = () => {
                 transition={{ duration: 0.25 }}
               >
                 {/* Image */}
-                <div className="relative aspect-[3/4] w-full overflow-hidden bg-bg-silk-glow/20">
+                <div className="relative aspect-3/4 w-full overflow-hidden bg-bg-silk-glow/20">
                   {category.image_url ? (
                     <motion.img
                       layout
@@ -138,13 +138,13 @@ const CategoryCards = () => {
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-logo-rose to-action-bordeaux flex items-center justify-center">
+                    <div className="w-full h-full bg-linear-to-br from-logo-rose to-action-bordeaux flex items-center justify-center">
                       <span className="text-white font-serif text-3xl font-bold uppercase">
                         {category.name.charAt(0)}
                       </span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
 
                   {/* Badge */}
                   <div className="absolute top-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full border border-logo-rose/20">
@@ -157,7 +157,7 @@ const CategoryCards = () => {
                   <div className="absolute inset-x-0 bottom-0 p-3 flex justify-start md:justify-center">
                     <motion.h3
                       layout
-                      className="font-serif !text-base sm:!text-lg md:!text-xl text-white font-bold tracking-wide text-left md:text-center leading-tight"
+                      className="font-serif text-base! sm:text-lg! md:text-xl! text-white font-bold tracking-wide text-left md:text-center leading-tight"
                     >
                       {category.name}
                     </motion.h3>
@@ -176,8 +176,8 @@ const CategoryCards = () => {
                         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                         className="flex flex-col gap-3 overflow-hidden"
                       >
-                        <div className="h-px bg-gradient-to-r from-logo-rose/20 to-transparent" />
-                        <p className="font-sans text-logo-black/70 leading-relaxed !text-xs tracking-wide text-left md:text-center">
+                        <div className="h-px bg-linear-to-r from-logo-rose/20 to-transparent" />
+                        <p className="font-sans text-logo-black/70 leading-relaxed text-xs! tracking-wide text-left md:text-center">
                           {category.description || 'Explore this curated collection.'}
                         </p>
                         <div className="flex flex-col items-stretch gap-2 mt-1">

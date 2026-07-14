@@ -71,7 +71,7 @@ const DescriptionBlock = ({ text }: { text: string }) => {
   return (
     <div className="space-y-1.5">
       <h3 className="text-xs font-bold uppercase tracking-wider text-logo-black/60">Description</h3>
-      <p className="text-logo-black/80 text-sm leading-relaxed break-words overflow-hidden">
+      <p className="text-logo-black/80 text-sm leading-relaxed wrap-break-word overflow-hidden">
         {isLong && !expanded ? `${text.slice(0, CHAR_LIMIT).trimEnd()}…` : text}
       </p>
       {isLong && (
@@ -278,11 +278,11 @@ const ProductDetail = () => {
       </div>
 
       <div className="max-w-[1600px] mx-auto px-4 md:px-12 lg:px-16 mt-4">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 bg-white p-5 md:p-10 rounded-[2rem] border border-logo-rose/10 shadow-[0_10px_40px_rgba(210,150,158,0.06)]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 bg-white p-5 md:p-10 rounded-4xl border border-logo-rose/10 shadow-[0_10px_40px_rgba(210,150,158,0.06)]">
 
           {/* ── Left: Gallery ── */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="relative aspect-[2/3] max-h-[70vh] rounded-[1.75rem] overflow-hidden bg-bg-silk-glow/20 border border-logo-rose/10 flex items-center justify-center">
+            <div className="relative aspect-2/3 max-h-[70vh] rounded-[1.75rem] overflow-hidden bg-bg-silk-glow/20 border border-logo-rose/10 flex items-center justify-center">
               {activeImage ? (
                 <motion.img
                   key={activeImage}
@@ -311,7 +311,7 @@ const ProductDetail = () => {
               <div className="flex gap-3 overflow-x-auto pb-2">
                 {allImages.map((img, idx) => (
                   <button key={img.id ?? idx} onClick={() => setActiveImage(img.image_url)}
-                    className={`w-20 md:w-24 aspect-[4/5] rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                    className={`w-20 md:w-24 aspect-4/5 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
                       activeImage === img.image_url
                         ? 'border-action-bordeaux shadow-md'
                         : 'border-logo-rose/10 hover:border-logo-rose/30 opacity-70 hover:opacity-100'
@@ -390,7 +390,7 @@ const ProductDetail = () => {
               <div className="flex flex-wrap gap-2">
                 {availableSizes.map((size) => (
                   <button key={size} onClick={() => setSelectedSize(size)}
-                    className={`min-w-[44px] h-11 px-3 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer border ${
+                    className={`min-w-11 h-11 px-3 rounded-xl text-xs font-bold flex items-center justify-center transition-all cursor-pointer border ${
                       selectedSize === size
                         ? 'bg-action-bordeaux text-white border-action-bordeaux shadow-sm'
                         : 'bg-white text-logo-black border-logo-rose/20 hover:border-logo-rose/50'
@@ -515,7 +515,7 @@ const ProductDetail = () => {
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[300]"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-300"
               onClick={() => setShowAuthModal(false)}
             />
             <motion.div
@@ -523,7 +523,7 @@ const ProductDetail = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ type: 'spring', stiffness: 340, damping: 28 }}
-              className="fixed inset-0 z-[301] flex items-center justify-center p-4"
+              className="fixed inset-0 z-301 flex items-center justify-center p-4"
             >
               <div className="bg-white rounded-3xl shadow-2xl border border-logo-rose/15 p-8 w-full max-w-sm text-center">
                 {/* Icon */}

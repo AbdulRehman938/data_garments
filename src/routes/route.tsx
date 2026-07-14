@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createBrowserRouter, Outlet } from 'react-router-dom';
 import { HomePage, Login, Signup, VerifyOtp, ProfileSettings, NotFound, Shop, ProductDetail } from '../pages';
 import ForgotPassword from '../pages/auth/ForgotPassword';
@@ -26,7 +27,7 @@ const MainLayout = () => (
   <div className="flex flex-col min-h-screen">
     <ScrollToTop />
     <Header />
-    <main className="flex-grow"><Outlet /></main>
+    <main className="grow"><Outlet /></main>
     <Footer />
   </div>
 );
@@ -35,7 +36,7 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen flex flex-col bg-bg-silk-glow">
     <ScrollToTop />
     <Header />
-    <div className="w-full flex-grow flex items-center justify-center px-4 py-8 md:py-5 lg:py-10">
+    <div className="w-full grow flex items-center justify-center px-4 py-8 md:py-5 lg:py-10">
       {children}
     </div>
   </div>

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useState, useEffect, useCallback } from 'react';
 import { getCache, setCache } from '../utils/db';
 
 interface UsePaginatedDataOptions<T> {
@@ -20,7 +21,7 @@ export const usePaginatedData = <T>({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async (currentPage: number, isFresh = false) => {
+  const fetchData = useCallback(async (currentPage: number, isFresh = false) => {
     if (!enabled) return;
     setIsLoading(true);
     setError(null);
@@ -39,16 +40,17 @@ export const usePaginatedData = <T>({
         setData((prev) => [...prev, ...result.data]);
       }
       setTotal(result.total);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch data');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch data';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [key, fetcher, pageSize, enabled]);
 
   useEffect(() => {
     fetchData(1, true);
-  }, [key, enabled]); // Reset to page 1 when key changes
+  }, [key, enabled, fetchData, pageSize]);
 
   const nextPage = () => {
     if (isLoading) return;

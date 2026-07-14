@@ -162,7 +162,7 @@ const Header = () => {
             <motion.img
               src="/logo_header.avif"
               alt="Data Garments"
-              className="h-8 md:h-9 w-[115px] md:w-[135px] max-w-full object-fill"
+              className="h-8 md:h-9 w-28.75 md:w33.75 max-w-full object-fill"
               whileHover={{ scale: 1.00 }}
               transition={{ duration: 0.2 }}
               loading="eager"
@@ -174,11 +174,11 @@ const Header = () => {
             <div className="flex items-center gap-1 md:gap-4">
 
               {/* ─── Search ─── */}
-              <div ref={searchRef} className="relative">
+              <div ref={searchRef} className="relative flex-1 md:flex-none">
                 <div
                   onClick={() => { if (!isSearchOpen) { setIsSearchOpen(true); setTimeout(() => searchInputRef.current?.focus(), 50); } }}
                   className={`flex items-center h-10 md:h-9 rounded-full overflow-visible border transition-all duration-300 ease-in-out px-2.5 md:px-3 ${isSearchOpen
-                    ? 'w-[220px] xs:w-[270px] sm:w-[360px] md:w-[380px] lg:w-[450px] bg-bg-silk-glow border-logo-rose/30 cursor-default'
+                    ? 'w-full md:w-95 lg:w-112.5 bg-bg-silk-glow border-logo-rose/30 cursor-default'
                     : 'w-10 md:w-9 bg-transparent border-transparent hover:bg-logo-rose/10 cursor-pointer justify-center px-0!'
                   }`}
                 >
@@ -216,7 +216,7 @@ const Header = () => {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 8 }}
                       transition={{ duration: 0.18 }}
-                      className="absolute top-full left-0 right-0 mt-2 bg-white/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-logo-rose/15 overflow-hidden z-[200] max-h-80 overflow-y-auto"
+                      className="absolute top-full left-0 right-0 mt-2 bg-white/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-logo-rose/15 overflow-hidden z-200 max-h-80 overflow-y-auto"
                     >
                       {isSearching ? (
                         <div className="px-4 py-5 text-center text-xs text-logo-black/40 font-sans">Searching...</div>
@@ -305,14 +305,14 @@ const Header = () => {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 10, scale: 0.95 }}
                           transition={{ duration: 0.2 }}
-                          className="fixed right-2 md:right-6 top-16 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-logo-rose/20 overflow-hidden z-[9999]"
+                          className="fixed right-2 md:right-6 top-16 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-logo-rose/20 overflow-hidden z-9999"
                         >
                           <div className="p-4 border-b border-logo-rose/10 bg-bg-silk-glow/30">
                             <div className="flex items-center gap-3">
                               {user?.profilePicUrl ? (
                                 <img src={user.profilePicUrl} alt={user.username} className="w-12 h-12 rounded-full object-cover ring-2 ring-logo-rose/20" />
                               ) : (
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-logo-rose to-action-bordeaux flex items-center justify-center ring-2 ring-logo-rose/20">
+                                <div className="w-12 h-12 rounded-full bg-linear-to-br from-logo-rose to-action-bordeaux flex items-center justify-center ring-2 ring-logo-rose/20">
                                   <FiUser className="text-white" size={24} />
                                 </div>
                               )}
@@ -396,12 +396,12 @@ const Header = () => {
           {isMobileMenuOpen && (
             <>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}
-                className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]"
+                className="md:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-100"
                 onClick={() => setIsMobileMenuOpen(false)} />
               <motion.div
                 initial={{ y: '-100%' }} animate={{ y: 0 }} exit={{ y: '-100%' }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                className="md:hidden fixed top-0 left-0 right-0 w-full bg-white/95 backdrop-blur-2xl shadow-[0_15px_40px_rgba(99,6,32,0.1)] z-[101] overflow-hidden rounded-b-[2rem] border-b border-logo-rose/10 flex flex-col"
+                className="md:hidden fixed top-0 left-0 right-0 w-full bg-white/95 backdrop-blur-2xl shadow-[0_15px_40px_rgba(99,6,32,0.1)] z-101 overflow-hidden rounded-b-4xl border-b border-logo-rose/10 flex flex-col"
               >
                 <div className="flex flex-col p-5 pb-6 space-y-5 overflow-y-auto max-h-[80vh]">
                   <div className="flex items-center justify-between border-b border-logo-rose/10 pb-3">
@@ -429,7 +429,7 @@ const Header = () => {
                           {user?.profilePicUrl ? (
                             <img src={user.profilePicUrl} alt={user.username} className="w-9 h-9 rounded-full object-cover ring-2 ring-logo-rose/20" />
                           ) : (
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-logo-rose to-action-bordeaux flex items-center justify-center"><FiUser className="text-white" size={16} /></div>
+                            <div className="w-9 h-9 rounded-full bg-linear-to-br from-logo-rose to-action-bordeaux flex items-center justify-center"><FiUser className="text-white" size={16} /></div>
                           )}
                           <div className="min-w-0">
                             <p className="font-sans text-xs font-bold text-logo-black truncate">{user?.username}</p>
@@ -452,12 +452,12 @@ const Header = () => {
           {isCartOpen && (
             <>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
-                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200]"
+                className="fixed inset-0 bg-black/40 backdrop-blur-sm z-200"
                 onClick={() => closeCart()} />
               <motion.div
                 initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
                 transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-                className="fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-[201] flex flex-col"
+                className="fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-201 flex flex-col"
               >
                 {/* Cart Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-logo-rose/10 bg-bg-silk-glow/30 shrink-0">
@@ -518,7 +518,7 @@ const Header = () => {
                     </div>
                   ) : (
                     filteredCartItems.map((item, index) => (
-                      <div key={`${item.id}-${item.size || ''}-${item.color || ''}-${index}`} className="flex items-center gap-3 p-3 bg-bg-silk-glow/30 rounded-2xl border border-logo-rose/[0.08]">
+                      <div key={`${item.id}-${item.size || ''}-${item.color || ''}-${index}`} className="flex items-center gap-3 p-3 bg-bg-silk-glow/30 rounded-2xl border border-logo-rose/8">
                         {item.image_url ? (
                           <img src={item.image_url} alt={item.name} className="w-16 h-16 object-cover rounded-xl shrink-0 border border-logo-rose/10" />
                         ) : (

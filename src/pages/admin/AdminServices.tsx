@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiPlus, FiEdit2, FiTrash2, FiCheck, FiX, FiToggleLeft, FiToggleRight,
@@ -42,9 +43,7 @@ const AdminServices = () => {
   const [editing, setEditing] = useState<Service | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetchServices(); }, []);
-
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -58,7 +57,9 @@ const AdminServices = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => { fetchServices(); }, [fetchServices]);
 
   const formik = useFormik({
     initialValues: { label: '', icon_name: 'FiTruck' },

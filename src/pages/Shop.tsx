@@ -342,7 +342,7 @@ const Shop = () => {
           {/* Controls Bar */}
           <div className="flex flex-wrap items-center justify-between gap-3 bg-white rounded-2xl border border-logo-rose/10 p-3 md:p-4">
             {/* Search */}
-            <div className="relative flex-1 min-w-[160px] max-w-sm">
+            <div className="relative flex-1 min-w-40 max-w-sm">
               <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-logo-black/40" size={16} />
               <input
                 type="text"
@@ -389,7 +389,7 @@ const Shop = () => {
           {isLoading ? (            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="rounded-2xl bg-white border border-logo-rose/10 overflow-hidden animate-pulse">
-                  <div className="aspect-[4/5] bg-logo-rose/5" />
+                  <div className="aspect-4/5 bg-logo-rose/5" />
                   <div className="p-3 space-y-2">
                     <div className="h-3 bg-logo-rose/5 rounded" />
                     <div className="h-3 bg-logo-rose/5 rounded w-2/3" />
@@ -398,7 +398,7 @@ const Shop = () => {
               ))}
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="min-h-[360px] bg-white rounded-3xl border border-logo-rose/10 flex flex-col items-center justify-center text-center p-8">
+            <div className="min-h-90 bg-white rounded-3xl border border-logo-rose/10 flex flex-col items-center justify-center text-center p-8">
               <FiImage size={44} className="text-logo-rose/30 mb-4" />
               <h3 className="font-serif text-xl text-logo-black mb-2">No Products Found</h3>
               <p className="text-logo-black/50 text-sm max-w-sm">Try adjusting your filters or browse all collections.</p>
@@ -431,7 +431,7 @@ const Shop = () => {
                       className="bg-white rounded-2xl overflow-hidden border border-logo-rose/10 shadow-[0_2px_12px_rgba(210,150,158,0.04)] hover:shadow-[0_10px_28px_rgba(210,150,158,0.09)] hover:border-logo-rose/20 transition-all duration-300"
                     >
                       {/* Image */}
-                      <div className="relative aspect-[4/5] overflow-hidden bg-bg-silk-glow/30">
+                      <div className="relative aspect-4/5 overflow-hidden bg-bg-silk-glow/30">
                         {displayImg ? (
                           <img
                             src={displayImg}
@@ -667,7 +667,7 @@ const Shop = () => {
           <>
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[300]"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-300"
               onClick={() => setShowAuthModal(false)}
             />
             <motion.div
@@ -675,7 +675,7 @@ const Shop = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 20 }}
               transition={{ type: 'spring', stiffness: 340, damping: 28 }}
-              className="fixed inset-0 z-[301] flex items-center justify-center p-4 pointer-events-none"
+              className="fixed inset-0 z-301 flex items-center justify-center p-4 pointer-events-none"
             >
               <div className="pointer-events-auto bg-white rounded-3xl shadow-2xl border border-logo-rose/15 p-8 w-full max-w-sm text-center">
                 <div className="w-14 h-14 rounded-2xl bg-logo-rose/10 flex items-center justify-center mx-auto mb-4">

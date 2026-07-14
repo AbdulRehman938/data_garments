@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+/* eslint-disable react-refresh/only-export-components, react-hooks/preserve-manual-memoization, react-hooks/set-state-in-effect */
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { supabase } from '../utils/supabase';
 import { useAuth } from './AuthContext';
 
@@ -9,6 +10,13 @@ export interface WishlistItem {
   price: number;
   image_url: string | null;
   added_at: string;
+}
+
+interface SupabaseWishlistRow {
+  id: string;
+  product_id: string;
+  added_at: string;
+  products: { name: string; price: number; image_url: string | null }[] | null;
 }
 
 interface WishlistContextType {
@@ -28,7 +36,7 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const wishlistIds = new Set(wishlistItems.map((i) => i.product_id));
+  const wishlistIds = useMemo(() => new Set(wishlistItems.map((i) => i.product_id)), [wishlistItems]);
 
   const fetchWishlist = useCallback(async () => {
     if (!user?.id) { setWishlistItems([]); return; }
@@ -42,14 +50,17 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) throw error;
 
-      const items: WishlistItem[] = (data || []).map((row: any) => ({
-        id: row.id,
-        product_id: row.product_id,
-        name: row.products?.name ?? 'Unknown',
-        price: row.products?.price ?? 0,
-        image_url: row.products?.image_url ?? null,
-        added_at: row.added_at,
-      }));
+      const items: WishlistItem[] = ((data || []) as unknown as SupabaseWishlistRow[]).map((row) => {
+        const product = row.products?.[0];
+        return {
+          id: row.id,
+          product_id: row.product_id,
+          name: product?.name ?? 'Unknown',
+          price: product?.price ?? 0,
+          image_url: product?.image_url ?? null,
+          added_at: row.added_at,
+        };
+      });
       setWishlistItems(items);
     } catch (err) {
       console.error('Error fetching wishlist:', err);

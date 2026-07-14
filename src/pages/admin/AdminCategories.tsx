@@ -265,7 +265,7 @@ const AdminCategories = () => {
               <button
                 key={cat.id}
                 onClick={() => !isDisabled && toggleFeatured(cat.id)}
-                className={`relative rounded-xl overflow-hidden aspect-[4/3] border-2 transition-all text-left cursor-pointer ${
+                className={`relative rounded-xl overflow-hidden aspect-4/3 border-2 transition-all text-left cursor-pointer ${
                   isSelected
                     ? 'border-action-bordeaux ring-2 ring-action-bordeaux/20 shadow-md'
                     : isDisabled
@@ -276,11 +276,11 @@ const AdminCategories = () => {
                 {cat.image_url ? (
                   <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-logo-rose to-action-bordeaux flex items-center justify-center">
+                  <div className="w-full h-full bg-linear-to-br from-logo-rose to-action-bordeaux flex items-center justify-center">
                     <span className="text-white font-serif text-2xl font-bold">{cat.name.charAt(0)}</span>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent" />
                 <span className="absolute bottom-2 left-2 right-2 text-white text-xs font-bold truncate font-sans">
                   {cat.name}
                 </span>

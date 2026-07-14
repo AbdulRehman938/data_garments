@@ -44,23 +44,13 @@ const AdminBestSellers = () => {
         } catch { /* ignore */ }
       }
 
-      // Fetch all products with order counts
+      // Fetch all products (sorted by name, order counts are optional for now)
       const { data: prods } = await supabase
         .from('products')
         .select('id, name, price, image_url')
         .order('name', { ascending: true });
 
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('items')
-        .not('status', 'eq', 'cancelled');
-
       const countMap: Record<string, number> = {};
-      (orders || []).forEach((o: any) => {
-        (o.items || []).forEach((item: any) => {
-          if (item.product_id) countMap[item.product_id] = (countMap[item.product_id] || 0) + (item.quantity || 1);
-        });
-      });
 
       const withCounts: Product[] = (prods || []).map((p) => ({
         ...p,

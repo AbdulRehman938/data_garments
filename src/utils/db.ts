@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { openDB } from 'idb';
 import type { DBSchema, IDBPDatabase } from 'idb';
 

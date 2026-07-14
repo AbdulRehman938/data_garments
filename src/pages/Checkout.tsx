@@ -55,6 +55,15 @@ const PAKISTANI_CITIES = [
   'Hattian', 'Neelum', 'Kahuta', 'Kallar Syedan', 'Murree', 'Kotli Sattian', 'Rawalpindi', 'Islamabad'
 ];
 
+interface CheckoutFormValues {
+  full_name: string;
+  phone: string;
+  address: string;
+  city: string;
+  note: string;
+  delivery: string;
+}
+
 const checkoutSchema = Yup.object({
   full_name: Yup.string()
     .trim()
@@ -113,7 +122,7 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
-  const formik = useFormik({
+  const formik = useFormik<CheckoutFormValues>({
     initialValues: {
       full_name: '',
       phone: '',
@@ -236,12 +245,12 @@ const Checkout = () => {
   const deliveryCharge = baseDeliveryCharge + (selectedDelivery.extraCharge || 0);
   const grandTotal = cartTotal + deliveryCharge;
 
-  const fErr = (f: string) =>
-    (formik.touched as any)[f] && (formik.errors as any)[f]
-      ? (formik.errors as any)[f] as string
+  const fErr = (f: keyof CheckoutFormValues): string =>
+    formik.touched[f] && formik.errors[f]
+      ? (formik.errors[f] as string)
       : '';
 
-  const inputCls = (f: string) =>
+  const inputCls = (f: keyof CheckoutFormValues) =>
     `w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-logo-rose/15 transition-all ${
       fErr(f) ? 'border-red-400' : 'border-logo-rose/20 focus:border-logo-rose'
     }`;
@@ -266,7 +275,7 @@ const Checkout = () => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="fixed inset-0 z-[500] bg-white flex flex-col items-center justify-center gap-6 text-center p-8"
+            className="fixed inset-0 z-500 bg-white flex flex-col items-center justify-center gap-6 text-center p-8"
           >
             <motion.div
               initial={{ scale: 0 }}

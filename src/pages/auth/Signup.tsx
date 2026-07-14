@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiUser, FiArrowLeft, FiPhone, FiMapPin, FiSearch, FiCamera, FiChevronDown } from 'react-icons/fi';
@@ -195,6 +196,7 @@ const Signup = () => {
               otp: otp,
               otp_created_at: new Date().toISOString(),
               is_verified: false,
+              role: 'Customer',
             })
             .select('id')
             .single();
@@ -232,6 +234,7 @@ const Signup = () => {
               otp: otp,
               otp_created_at: new Date().toISOString(),
               is_verified: false,
+              role: 'Customer',
             });
 
           if (dbError) throw dbError;
@@ -279,7 +282,7 @@ const Signup = () => {
       className="w-full max-w-6xl flex flex-col lg:flex-row gap-6 lg:gap-8 items-center justify-center mx-auto"
     >
       {/* Left Side - Image Placeholder */}
-      <div className="hidden lg:flex flex-1 h-[560px]">
+      <div className="hidden lg:flex flex-1 h-140">
         <div className="w-full h-full bg-white/60 backdrop-blur-sm rounded-3xl border border-logo-rose/20 shadow-xl overflow-hidden flex items-center justify-center">
           <div className="text-center p-8">
             <p className="font-serif text-2xl text-logo-black/40 mb-2">Image Placeholder</p>
@@ -445,7 +448,7 @@ const Signup = () => {
                     animate={{ opacity: 1, scaleY: 1 }}
                     exit={{ opacity: 0, scaleY: 0.8 }}
                     transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="absolute left-0 top-[70px] w-64 max-h-56 bg-white border border-logo-rose/30 rounded-xl shadow-xl overflow-hidden flex flex-col z-50 origin-top"
+                    className="absolute left-0 top-17.5 w-64 max-h-56 bg-white border border-logo-rose/30 rounded-xl shadow-xl overflow-hidden flex flex-col z-50 origin-top"
                   >
                     {/* Search country field */}
                     <div className="p-2 border-b border-logo-rose/10 flex items-center gap-1 bg-bg-silk-glow/50">
@@ -459,7 +462,7 @@ const Signup = () => {
                       />
                     </div>
                     {/* List */}
-                    <div className="overflow-y-auto flex-grow py-1 bg-white">
+                    <div className="overflow-y-auto grow py-1 bg-white">
                       {filteredCountries.length > 0 ? (
                         filteredCountries.map((c) => (
                           <button
@@ -478,7 +481,7 @@ const Signup = () => {
                                 alt={c.code}
                                 className="w-5 h-3.5 object-cover rounded shadow-sm shrink-0"
                               />
-                              <span className="font-sans text-xs text-logo-black truncate max-w-[130px]">
+                              <span className="font-sans text-xs text-logo-black truncate max-w-32.5">
                                 {c.name}
                               </span>
                             </div>
@@ -601,7 +604,7 @@ const Signup = () => {
             disabled={isLoading}
             whileHover={!isLoading ? { scale: 1.01 } : {}}
             whileTap={!isLoading ? { scale: 0.99 } : {}}
-            className={`w-full py-2.5 bg-action-bordeaux hover:bg-[#460416] text-white rounded-xl font-sans font-semibold tracking-wide text-xs md:text-sm shadow-md transition-all duration-300 cursor-pointer !mt-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+            className={`w-full py-2.5 bg-action-bordeaux hover:bg-[#460416] text-white rounded-xl font-sans font-semibold tracking-wide text-xs md:text-sm shadow-md transition-all duration-300 cursor-pointer mt-2! ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
             {isLoading ? 'Processing...' : 'Create Account'}
           </motion.button>

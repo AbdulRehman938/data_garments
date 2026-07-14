@@ -392,7 +392,7 @@ const AdminBulkUpload = () => {
                       <tr key={i} className={`border-t border-logo-rose/5 ${hasError ? 'bg-red-50' : 'hover:bg-logo-rose/3'}`}>
                         <td className="px-3 py-2.5 text-logo-black/40">{i + 2}</td>
                         {previewColumns.map((col) => (
-                          <td key={col} className="px-3 py-2.5 text-logo-black max-w-[160px] truncate">
+                          <td key={col} className="px-3 py-2.5 text-logo-black max-w-40 truncate">
                             {row[col] || <span className="text-logo-black/25 italic">—</span>}
                           </td>
                         ))}
