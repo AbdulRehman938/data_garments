@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { FiUser, FiMail, FiPhone, FiMapPin, FiCamera, FiArrowLeft, FiSave, FiHeart } from 'react-icons/fi';
-import { Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiUser, FiMail, FiPhone, FiMapPin, FiCamera, FiArrowLeft, FiSave, FiHeart, FiShoppingBag } from 'react-icons/fi';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../utils/supabase';
 import { uploadProfileImage } from '../utils/storage';
+import WishlistContent from '../components/profile/WishlistContent';
+import OrderHistoryContent from '../components/profile/OrderHistoryContent';
 
 interface Country {
   name: string;
@@ -18,7 +20,11 @@ interface Country {
 const ProfileSettings = () => {
   const { user, login } = useAuth();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isAdminContext = location.pathname.startsWith('/admin');
+  const [activeTab, setActiveTab] = useState<'profile' | 'wishlist' | 'orders'>(
+    (searchParams.get('tab') as 'profile' | 'wishlist' | 'orders') || 'profile'
+  );
   const [previewUrl, setPreviewUrl] = useState<string | null>(user?.profilePicUrl || null);
   const [isLoading, setIsLoading] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -32,6 +38,28 @@ const ProfileSettings = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle tab switching based on URL
+  useEffect(() => {
+    const tab = searchParams.get('tab') as 'profile' | 'wishlist' | 'orders';
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  // Set tab based on current path
+  useEffect(() => {
+    if (location.pathname === '/wishlist' && activeTab !== 'wishlist') {
+      setActiveTab('wishlist');
+      setSearchParams('tab=wishlist');
+    } else if (location.pathname === '/order-history' && activeTab !== 'orders') {
+      setActiveTab('orders');
+      setSearchParams('tab=orders');
+    } else if (location.pathname === '/profile-settings' && activeTab !== 'profile') {
+      setActiveTab('profile');
+      setSearchParams('tab=profile');
+    }
+  }, [location.pathname]);
 
   // Fetch current user data from database
   useEffect(() => {
@@ -272,15 +300,15 @@ const ProfileSettings = () => {
   }
 
   return (
-    <div className="min-h-auto bg-bg-silk-glow px-2 md:px-4 py-0">
+    <div className="min-h-auto bg-bg-silk-glow w-full py-0 px-3 md:px-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-full md:max-w-3xl mx-auto px-2 md:px-0"
+        className="w-full md:max-w-3xl md:mx-auto md:px-0"
       >
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8 px-0 md:px-0 w-full">
           {!isAdminContext && (
             <Link
               to="/"
@@ -299,269 +327,325 @@ const ProfileSettings = () => {
 
           {/* Quick nav tabs */}
           {!isAdminContext && (
-            <div className="flex gap-2 mt-4">
-              <span className="px-4 py-2 bg-action-bordeaux text-white rounded-full font-sans font-bold text-xs uppercase tracking-wide">
-                Profile
-              </span>
-              <Link
-                to="/wishlist"
-                className="flex items-center gap-1.5 px-4 py-2 border border-logo-rose/20 text-logo-black/60 hover:border-logo-rose hover:text-logo-rose rounded-full font-sans font-bold text-xs uppercase tracking-wide transition-all"
+            <div className="flex gap-2 mt-4 flex-wrap">
+              <button
+                onClick={() => { setActiveTab('profile'); setSearchParams('tab=profile'); }}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-sans font-bold text-xs uppercase tracking-wide transition-all cursor-pointer ${
+                  activeTab === 'profile' 
+                    ? 'bg-action-bordeaux text-white' 
+                    : 'border border-logo-rose/20 text-logo-black/60 hover:border-logo-rose hover:text-logo-rose'
+                }`}
+              >
+                <FiUser size={12} /> Profile
+              </button>
+              <button
+                onClick={() => { setActiveTab('wishlist'); setSearchParams('tab=wishlist'); }}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-sans font-bold text-xs uppercase tracking-wide transition-all cursor-pointer ${
+                  activeTab === 'wishlist' 
+                    ? 'bg-action-bordeaux text-white' 
+                    : 'border border-logo-rose/20 text-logo-black/60 hover:border-logo-rose hover:text-logo-rose'
+                }`}
               >
                 <FiHeart size={12} /> Wishlist
-              </Link>
+              </button>
+              <button
+                onClick={() => { setActiveTab('orders'); setSearchParams('tab=orders'); }}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full font-sans font-bold text-xs uppercase tracking-wide transition-all cursor-pointer ${
+                  activeTab === 'orders' 
+                    ? 'bg-action-bordeaux text-white' 
+                    : 'border border-logo-rose/20 text-logo-black/60 hover:border-logo-rose hover:text-logo-rose'
+                }`}
+              >
+                <FiShoppingBag size={12} /> Orders
+              </button>
             </div>
           )}
         </div>
 
-        {/* Profile Card */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-logo-rose/20 p-4 md:p-6">
-          {/* Profile Picture Section */}
-          <div className="flex flex-col items-center justify-center mb-8">
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="w-24 h-24 rounded-full border-2 border-logo-rose/25 bg-bg-silk-glow/50 overflow-hidden flex items-center justify-center relative shadow-sm group cursor-pointer transition-all duration-300 hover:border-logo-rose/60"
+        {/* Content based on active tab */}
+        <AnimatePresence mode="wait">
+          {activeTab === 'profile' && (
+            <motion.div
+              key="profile"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
             >
-              {previewUrl ? (
-                <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-              ) : (
-                <FiUser className="text-logo-black/30 w-10 h-10 group-hover:scale-105 transition-transform duration-300" />
-              )}
-              <div className="absolute inset-0 bg-logo-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <FiCamera className="text-white w-6 h-6 mb-1" />
-                <span className="text-white font-sans text-xs font-medium">Change Photo</span>
-              </div>
-            </div>
-            {formik.values.profilePic && (
-              <button
-                type="button"
-                onClick={handleRemovePhoto}
-                className="text-xs text-logo-rose hover:underline font-sans mt-2 cursor-pointer"
-              >
-                Remove New Photo
-              </button>
-            )}
-          </div>
-
-          {/* Form */}
-          <form onSubmit={formik.handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-              {/* Username */}
-              <div className="space-y-1">
-                <label className="block font-sans text-sm font-medium text-logo-black mb-1.5">
-                  Username
-                </label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-logo-black/40">
-                    <FiUser size={18} />
-                  </div>
+              {/* Profile Card */}
+              <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-logo-rose/20 p-4 md:p-6 w-full">
+                {/* Profile Picture Section */}
+                <div className="flex flex-col items-center justify-center mb-8">
                   <input
-                    type="text"
-                    name="username"
-                    placeholder="Enter username"
-                    maxLength={30}
-                    value={formik.values.username}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className="w-full pl-11 pr-4 py-2.5 bg-bg-silk-glow/50 border border-logo-rose/20 rounded-xl font-sans text-sm text-logo-black placeholder:text-logo-black/40 focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20 transition-all duration-300"
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
                   />
-                </div>
-                <div className="flex justify-between items-center h-4 text-xs font-sans mt-0.5 px-1">
-                  <span className="text-red-500">{formik.touched.username && formik.errors.username ? formik.errors.username : ''}</span>
-                  <span className="text-logo-black/30">{formik.values.username.length}/30</span>
-                </div>
-              </div>
-
-              {/* Email (Read-only) */}
-              <div className="space-y-1">
-                <label className="block font-sans text-sm font-medium text-logo-black mb-1.5">
-                  Email (Cannot be changed)
-                </label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-logo-black/40">
-                    <FiMail size={18} />
-                  </div>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formik.values.email}
-                    disabled
-                    className="w-full pl-11 pr-4 py-2.5 bg-bg-silk-glow/30 border border-logo-rose/20 rounded-xl font-sans text-sm text-logo-black/50 cursor-not-allowed"
-                  />
-                </div>
-              </div>
-
-              {/* Phone Number */}
-              <div className="space-y-1 md:col-span-2 relative" ref={dropdownRef}>
-                <label className="block font-sans text-sm font-medium text-logo-black mb-1.5">
-                  Phone Number
-                </label>
-                <div className="relative flex items-center bg-bg-silk-glow/50 border border-logo-rose/20 rounded-xl overflow-hidden focus-within:border-logo-rose focus-within:ring-2 focus-within:ring-logo-rose/20 transition-all duration-300">
-                  <button
-                    type="button"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex items-center gap-1.5 px-3 py-2.5 bg-logo-rose/5 border-r border-logo-rose/25 hover:bg-logo-rose/10 transition-colors duration-200 cursor-pointer shrink-0"
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-24 h-24 rounded-full border-2 border-logo-rose/25 bg-bg-silk-glow/50 overflow-hidden flex items-center justify-center relative shadow-sm group cursor-pointer transition-all duration-300 hover:border-logo-rose/60"
                   >
-                    {selectedCountry ? (
-                      <>
-                        <img
-                          src={selectedCountry.flag}
-                          alt={selectedCountry.code}
-                          className="w-5 h-3.5 object-cover rounded shadow-sm"
-                        />
-                        <span className="font-sans text-xs font-semibold text-logo-black">
-                          {selectedCountry.dialCode}
-                        </span>
-                      </>
+                    {previewUrl ? (
+                      <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
-                      <FiPhone size={16} />
+                      <FiUser className="text-logo-black/30 w-10 h-10 group-hover:scale-105 transition-transform duration-300" />
                     )}
-                  </button>
-                  
-                  <input
-                    type="text"
-                    name="phone"
-                    placeholder={`Format: ${currentMask.replace(/#/g, 'X')}`}
-                    maxLength={expectedLength}
-                    value={formik.values.phone}
-                    onChange={(e) => {
-                      // Only allow digits
-                      const val = e.target.value.replace(/\D/g, '');
-                      formik.setFieldValue('phone', val);
-                    }}
-                    onBlur={formik.handleBlur}
-                    className="w-full px-3 py-2.5 bg-transparent border-none outline-none font-sans text-sm text-logo-black placeholder:text-logo-black/30"
-                  />
+                    <div className="absolute inset-0 bg-logo-black/40 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <FiCamera className="text-white w-6 h-6 mb-1" />
+                      <span className="text-white font-sans text-xs font-medium">Change Photo</span>
+                    </div>
+                  </div>
+                  {formik.values.profilePic && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="text-xs text-logo-rose hover:underline font-sans mt-2 cursor-pointer"
+                    >
+                      Remove New Photo
+                    </button>
+                  )}
                 </div>
 
-                {/* Country Dropdown */}
-                {isDropdownOpen && (
-                  <div className="absolute left-0 top-17.5 w-64 max-h-56 bg-white border border-logo-rose/30 rounded-xl shadow-xl overflow-hidden flex flex-col z-50">
-                    <div className="p-2 border-b border-logo-rose/10 flex items-center gap-1 bg-bg-silk-glow/50">
-                      <input
-                        type="text"
-                        placeholder="Search country..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-transparent border-none outline-none font-sans text-xs text-logo-black placeholder:text-logo-black/40"
-                      />
+                {/* Form */}
+                <form onSubmit={formik.handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    {/* Username */}
+                    <div className="space-y-1">
+                      <label className="block font-sans text-sm font-medium text-logo-black mb-1.5">
+                        Username
+                      </label>
+                      <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-logo-black/40">
+                          <FiUser size={18} />
+                        </div>
+                        <input
+                          type="text"
+                          name="username"
+                          placeholder="Enter username"
+                          maxLength={30}
+                          value={formik.values.username}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                          className="w-full pl-11 pr-4 py-2.5 bg-bg-silk-glow/50 border border-logo-rose/20 rounded-xl font-sans text-sm text-logo-black placeholder:text-logo-black/40 focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20 transition-all duration-300"
+                        />
+                      </div>
+                      <div className="flex justify-between items-center h-4 text-xs font-sans mt-0.5 px-1">
+                        <span className="text-red-500">{formik.touched.username && formik.errors.username ? formik.errors.username : ''}</span>
+                        <span className="text-logo-black/30">{formik.values.username.length}/30</span>
+                      </div>
                     </div>
-                    <div className="overflow-y-auto grow py-1 bg-white">
-                      {filteredCountries.length > 0 ? (
-                        filteredCountries.map((c) => (
-                          <button
-                            key={`${c.code}-${c.dialCode}`}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCountry(c);
-                              setIsDropdownOpen(false);
-                              setSearchQuery('');
-                            }}
-                            className="w-full flex items-center justify-between px-3 py-2 hover:bg-logo-rose/5 text-left transition-colors duration-150 cursor-pointer"
-                          >
-                            <div className="flex items-center gap-2">
+
+                    {/* Email (Read-only) */}
+                    <div className="space-y-1">
+                      <label className="block font-sans text-sm font-medium text-logo-black mb-1.5">
+                        Email (Cannot be changed)
+                      </label>
+                      <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-logo-black/40">
+                          <FiMail size={18} />
+                        </div>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formik.values.email}
+                          disabled
+                          className="w-full pl-11 pr-4 py-2.5 bg-bg-silk-glow/30 border border-logo-rose/20 rounded-xl font-sans text-sm text-logo-black/50 cursor-not-allowed"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Phone Number */}
+                    <div className="space-y-1 md:col-span-2 relative" ref={dropdownRef}>
+                      <label className="block font-sans text-sm font-medium text-logo-black mb-1.5">
+                        Phone Number
+                      </label>
+                      <div className="relative flex items-center bg-bg-silk-glow/50 border border-logo-rose/20 rounded-xl overflow-hidden focus-within:border-logo-rose focus-within:ring-2 focus-within:ring-logo-rose/20 transition-all duration-300">
+                        <button
+                          type="button"
+                          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                          className="flex items-center gap-1.5 px-3 py-2.5 bg-logo-rose/5 border-r border-logo-rose/25 hover:bg-logo-rose/10 transition-colors duration-200 cursor-pointer shrink-0"
+                        >
+                          {selectedCountry ? (
+                            <>
                               <img
-                                src={c.flag}
-                                alt={c.code}
-                                className="w-5 h-3.5 object-cover rounded shadow-sm shrink-0"
+                                src={selectedCountry.flag}
+                                alt={selectedCountry.code}
+                                className="w-5 h-3.5 object-cover rounded shadow-sm"
                               />
-                              <span className="font-sans text-xs text-logo-black truncate max-w-32.5">
-                                {c.name}
+                              <span className="font-sans text-xs font-semibold text-logo-black">
+                                {selectedCountry.dialCode}
                               </span>
-                            </div>
-                            <span className="font-sans text-xs font-semibold text-logo-black/60">
-                              {c.dialCode}
-                            </span>
-                          </button>
-                        ))
-                      ) : (
-                        <div className="px-3 py-3 text-center font-sans text-xs text-logo-black/40">
-                          No countries found
+                            </>
+                          ) : (
+                            <FiPhone size={16} />
+                          )}
+                        </button>
+                        
+                        <input
+                          type="text"
+                          name="phone"
+                          placeholder={`Format: ${currentMask.replace(/#/g, 'X')}`}
+                          maxLength={expectedLength}
+                          value={formik.values.phone}
+                          onChange={(e) => {
+                            // Only allow digits
+                            const val = e.target.value.replace(/\D/g, '');
+                            formik.setFieldValue('phone', val);
+                          }}
+                          onBlur={formik.handleBlur}
+                          className="w-full px-3 py-2.5 bg-transparent border-none outline-none font-sans text-sm text-logo-black placeholder:text-logo-black/30"
+                        />
+                      </div>
+
+                      {/* Country Dropdown */}
+                      {isDropdownOpen && (
+                        <div className="absolute left-0 top-17.5 w-64 max-h-56 bg-white border border-logo-rose/30 rounded-xl shadow-xl overflow-hidden flex flex-col z-50">
+                          <div className="p-2 border-b border-logo-rose/10 flex items-center gap-1 bg-bg-silk-glow/50">
+                            <input
+                              type="text"
+                              placeholder="Search country..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="w-full bg-transparent border-none outline-none font-sans text-xs text-logo-black placeholder:text-logo-black/40"
+                            />
+                          </div>
+                          <div className="overflow-y-auto grow py-1 bg-white">
+                            {filteredCountries.length > 0 ? (
+                              filteredCountries.map((c) => (
+                                <button
+                                  key={`${c.code}-${c.dialCode}`}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedCountry(c);
+                                    setIsDropdownOpen(false);
+                                    setSearchQuery('');
+                                  }}
+                                  className="w-full flex items-center justify-between px-3 py-2 hover:bg-logo-rose/5 text-left transition-colors duration-150 cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <img
+                                      src={c.flag}
+                                      alt={c.code}
+                                      className="w-5 h-3.5 object-cover rounded shadow-sm shrink-0"
+                                    />
+                                    <span className="font-sans text-xs text-logo-black truncate max-w-32.5">
+                                      {c.name}
+                                    </span>
+                                  </div>
+                                  <span className="font-sans text-xs font-semibold text-logo-black/60">
+                                    {c.dialCode}
+                                  </span>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-3 py-3 text-center font-sans text-xs text-logo-black/40">
+                                No countries found
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
+
+                      <div className="flex justify-between items-center mt-0.5 px-1" style={{ minHeight: '1rem' }}>
+                        <span className="text-xs text-red-500 font-sans">
+                          {formik.touched.phone && formik.errors.phone ? formik.errors.phone : ''}
+                        </span>
+                        <span className="text-[10px] text-logo-black/30 font-sans shrink-0 ml-2">
+                          {formik.values.phone.length}/{expectedLength} digits
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Address */}
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="block font-sans text-sm font-medium text-logo-black mb-1.5">
+                        Delivery Address
+                      </label>
+                      <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-logo-black/40">
+                          <FiMapPin size={18} />
+                        </div>
+                        <input
+                          type="text"
+                          name="address"
+                          placeholder="Enter your complete shipping address"
+                          maxLength={200}
+                          value={formik.values.address}
+                          onChange={formik.handleChange}
+                          onBlur={formik.handleBlur}
+                          className="w-full pl-11 pr-4 py-2.5 bg-bg-silk-glow/50 border border-logo-rose/20 rounded-xl font-sans text-sm text-logo-black placeholder:text-logo-black/40 focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20 transition-all duration-300"
+                        />
+                      </div>
+                      <div className="flex justify-between items-center h-4 text-xs font-sans mt-0.5 px-1">
+                        <span className="text-red-500">{formik.touched.address && formik.errors.address ? formik.errors.address : ''}</span>
+                        <span className="text-logo-black/30">{formik.values.address.length}/200</span>
+                      </div>
                     </div>
                   </div>
-                )}
 
-                <div className="flex justify-between items-center mt-0.5 px-1" style={{ minHeight: '1rem' }}>
-                  <span className="text-xs text-red-500 font-sans">
-                    {formik.touched.phone && formik.errors.phone ? formik.errors.phone : ''}
-                  </span>
-                  <span className="text-[10px] text-logo-black/30 font-sans shrink-0 ml-2">
-                    {formik.values.phone.length}/{expectedLength} digits
-                  </span>
-                </div>
+                  {saveError && (
+                    <div className="text-red-500 text-sm text-center bg-red-50 py-2 rounded-lg">
+                      {saveError}
+                    </div>
+                  )}
+
+                  {saveSuccess && (
+                    <div className="text-green-500 text-sm text-center bg-green-50 py-2 rounded-lg">
+                      {saveSuccess}
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
+                  <motion.button
+                    type="submit"
+                    disabled={isLoading}
+                    whileHover={!isLoading ? { scale: 1.01 } : {}}
+                    whileTap={!isLoading ? { scale: 0.99 } : {}}
+                    className={`w-full py-3 bg-action-bordeaux hover:bg-[#460416] text-white rounded-xl font-sans font-semibold tracking-wide text-sm shadow-md transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${
+                      isLoading ? 'opacity-70 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {isLoading ? (
+                      <>
+                        <span className="animate-spin">⏳</span>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <FiSave size={18} />
+                        Save Changes
+                      </>
+                    )}
+                  </motion.button>
+                </form>
               </div>
-
-              {/* Address */}
-              <div className="space-y-1 md:col-span-2">
-                <label className="block font-sans text-sm font-medium text-logo-black mb-1.5">
-                  Delivery Address
-                </label>
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-logo-black/40">
-                    <FiMapPin size={18} />
-                  </div>
-                  <input
-                    type="text"
-                    name="address"
-                    placeholder="Enter your complete shipping address"
-                    maxLength={200}
-                    value={formik.values.address}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className="w-full pl-11 pr-4 py-2.5 bg-bg-silk-glow/50 border border-logo-rose/20 rounded-xl font-sans text-sm text-logo-black placeholder:text-logo-black/40 focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20 transition-all duration-300"
-                  />
-                </div>
-                <div className="flex justify-between items-center h-4 text-xs font-sans mt-0.5 px-1">
-                  <span className="text-red-500">{formik.touched.address && formik.errors.address ? formik.errors.address : ''}</span>
-                  <span className="text-logo-black/30">{formik.values.address.length}/200</span>
-                </div>
-              </div>
-            </div>
-
-            {saveError && (
-              <div className="text-red-500 text-sm text-center bg-red-50 py-2 rounded-lg">
-                {saveError}
-              </div>
-            )}
-
-            {saveSuccess && (
-              <div className="text-green-500 text-sm text-center bg-green-50 py-2 rounded-lg">
-                {saveSuccess}
-              </div>
-            )}
-
-            {/* Submit Button */}
-            <motion.button
-              type="submit"
-              disabled={isLoading}
-              whileHover={!isLoading ? { scale: 1.01 } : {}}
-              whileTap={!isLoading ? { scale: 0.99 } : {}}
-              className={`w-full py-3 bg-action-bordeaux hover:bg-[#460416] text-white rounded-xl font-sans font-semibold tracking-wide text-sm shadow-md transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 ${
-                isLoading ? 'opacity-70 cursor-not-allowed' : ''
-              }`}
+            </motion.div>
+          )}
+          {activeTab === 'wishlist' && (
+            <motion.div
+              key="wishlist"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
             >
-              {isLoading ? (
-                <>
-                  <span className="animate-spin">⏳</span>
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <FiSave size={18} />
-                  Save Changes
-                </>
-              )}
-            </motion.button>
-          </form>
-        </div>
+              <WishlistContent />
+            </motion.div>
+          )}
+          {activeTab === 'orders' && (
+            <motion.div
+              key="orders"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <OrderHistoryContent />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </div>
   );

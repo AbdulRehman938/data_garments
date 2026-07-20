@@ -202,8 +202,9 @@ const VerifyOtp = () => {
   if (!email) return null;
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <div className="mb-8 text-center">
+    <div className="min-h-screen flex items-start justify-center px-4 pt-20 md:pt-32">
+      <div className="w-full max-w-md mx-auto">
+        <div className="mb-8 text-center">
         <div className="w-16 h-16 bg-action-bordeaux/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <FiCheckCircle className="text-3xl text-action-bordeaux" />
         </div>
@@ -312,6 +313,7 @@ const VerifyOtp = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 };

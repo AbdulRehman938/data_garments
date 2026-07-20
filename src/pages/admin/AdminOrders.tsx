@@ -1,10 +1,24 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiSearch, FiEye, FiX, FiPackage, FiTruck, FiCheck, FiXCircle, FiClock } from 'react-icons/fi';
+import { FiSearch, FiEye, FiX, FiPackage, FiTruck, FiCheck, FiXCircle, FiClock, FiChevronDown } from 'react-icons/fi';
 import { supabase } from '../../utils/supabase';
 import { useToast } from '../../components/common/Toast';
 
 type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+
+// Lock body scroll when modal is open
+const useScrollLock = (isOpen: boolean) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+};
 
 interface OrderItem {
   product_id: string;
@@ -50,7 +64,11 @@ const AdminOrders = () => {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+
+  // Lock body scroll when modal is open
+  useScrollLock(!!viewingOrder);
   const ITEMS_PER_PAGE = 15;
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   useEffect(() => { fetchOrders(); }, [currentPage, statusFilter]);
 
@@ -135,7 +153,7 @@ const AdminOrders = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-logo-rose/20">
+      <div className="bg-transparent rounded-2xl overflow-hidden">
         {isLoading ? (
           <div className="p-10 text-center text-logo-black/50 font-sans text-sm">Loading orders...</div>
         ) : filtered.length === 0 ? (
@@ -155,9 +173,10 @@ const AdminOrders = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-logo-rose/8">
-                  {filtered.map((order) => {
+                  {filtered.map((order, index) => {
                     const cfg = STATUS_CONFIG[order.status];
                     const Icon = cfg.icon;
+                    const isLastOrder = index === filtered.length - 1;
                     return (
                       <tr key={order.id} className="hover:bg-logo-rose/3 transition-colors">
                         <td className="px-5 py-4 font-mono text-xs text-logo-black/50">{order.id.slice(0, 8)}…</td>
@@ -182,17 +201,47 @@ const AdminOrders = () => {
                               className="p-2 text-logo-rose hover:bg-logo-rose/10 rounded-lg transition-colors cursor-pointer" title="View details">
                               <FiEye size={16} />
                             </button>
-                            {/* Quick status change */}
-                            <select
-                              value={order.status}
-                              onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                              disabled={updatingId === order.id}
-                              className="text-xs border border-logo-rose/20 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-logo-rose cursor-pointer disabled:opacity-50"
-                            >
-                              {STATUS_FLOW.map((s) => (
-                                <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
-                              ))}
-                            </select>
+                            {/* Custom status dropdown */}
+                            <div className="relative">
+                              <button
+                                onClick={() => setOpenDropdownId(openDropdownId === order.id ? null : order.id)}
+                                className="flex items-center gap-1 text-xs border border-logo-rose/20 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:border-logo-rose cursor-pointer disabled:opacity-50 min-w-[100px]"
+                                disabled={updatingId === order.id}
+                              >
+                                <span className="truncate">{STATUS_CONFIG[order.status].label}</span>
+                                <FiChevronDown size={12} className={`transition-transform ${openDropdownId === order.id ? 'rotate-180' : ''}`} />
+                              </button>
+                              <AnimatePresence>
+                                {openDropdownId === order.id && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.2 }}
+                                    className={`absolute ${isLastOrder ? 'bottom-full mb-1' : 'top-full mt-1'} left-0 w-32 bg-white border border-logo-rose/20 rounded-lg shadow-lg z-10 overflow-hidden`}
+                                  >
+                                    {STATUS_FLOW.map((s) => {
+                                      const cfg = STATUS_CONFIG[s];
+                                      const Icon = cfg.icon;
+                                      return (
+                                        <button
+                                          key={s}
+                                          onClick={() => {
+                                            handleStatusChange(order.id, s);
+                                            setOpenDropdownId(null);
+                                          }}
+                                          disabled={updatingId === order.id}
+                                          className={`flex items-center gap-2 w-full px-3 py-2 text-xs text-left hover:bg-logo-rose/5 transition-colors disabled:opacity-50 ${order.status === s ? 'bg-logo-rose/10' : ''}`}
+                                        >
+                                          <Icon size={12} />
+                                          {cfg.label}
+                                        </button>
+                                      );
+                                    })}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -203,38 +252,71 @@ const AdminOrders = () => {
             </div>
 
             {/* Mobile cards */}
-            <div className="md:hidden divide-y divide-logo-rose/10">
-              {filtered.map((order) => {
+            <div className="md:hidden space-y-3">
+              {filtered.map((order, index) => {
                 const cfg = STATUS_CONFIG[order.status];
                 const Icon = cfg.icon;
+                const isLastOrder = index === filtered.length - 1;
                 return (
-                  <div key={order.id} className="p-4 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
+                  <div key={order.id} className="bg-white rounded-2xl border border-logo-rose/20 shadow-sm p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1">
                         <p className="font-semibold text-sm text-logo-black">{order.customer_name}</p>
-                        <p className="text-xs text-logo-black/50">{order.customer_phone} · {order.customer_city}</p>
+                        <p className="text-xs text-logo-black/50 mt-1">{order.customer_phone} · {order.customer_city}</p>
                       </div>
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${cfg.bg} ${cfg.color}`}>
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border shrink-0 ${cfg.bg} ${cfg.color}`}>
                         <Icon size={9} /> {cfg.label}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pt-2 border-t border-logo-rose/10">
                       <span className="text-xs text-logo-black/50">{order.items.length} items · {new Date(order.created_at).toLocaleDateString()}</span>
                       <span className="font-bold text-sm text-action-bordeaux">PKR {order.total_amount.toLocaleString()}</span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 pt-2">
                       <button onClick={() => setViewingOrder(order)}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-logo-rose/20 rounded-xl text-xs font-semibold text-logo-rose hover:bg-logo-rose/5 transition-colors cursor-pointer">
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-logo-rose/20 rounded-xl text-xs font-semibold text-logo-rose hover:bg-logo-rose/5 transition-colors cursor-pointer">
                         <FiEye size={13} /> View
                       </button>
-                      <select value={order.status}
-                        onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                        disabled={updatingId === order.id}
-                        className="flex-1 text-xs border border-logo-rose/20 rounded-xl px-2 py-2 bg-white focus:outline-none cursor-pointer">
-                        {STATUS_FLOW.map((s) => (
-                          <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
-                        ))}
-                      </select>
+                      <div className="relative flex-1">
+                        <button
+                          onClick={() => setOpenDropdownId(openDropdownId === order.id ? null : order.id)}
+                          className="w-full flex items-center justify-center gap-1.5 py-2.5 border border-logo-rose/20 rounded-xl text-xs font-semibold text-logo-black hover:bg-logo-rose/5 transition-colors cursor-pointer"
+                          disabled={updatingId === order.id}
+                        >
+                          <span className="truncate">{STATUS_CONFIG[order.status].label}</span>
+                          <FiChevronDown size={12} className={`transition-transform ${openDropdownId === order.id ? 'rotate-180' : ''}`} />
+                        </button>
+                        <AnimatePresence>
+                          {openDropdownId === order.id && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              transition={{ duration: 0.2 }}
+                              className={`absolute ${isLastOrder ? 'bottom-full mb-1' : 'top-full mt-1'} left-0 w-full bg-white border border-logo-rose/20 rounded-xl shadow-lg z-[9999] overflow-hidden`}
+                            >
+                              {STATUS_FLOW.map((s) => {
+                                const cfg = STATUS_CONFIG[s];
+                                const Icon = cfg.icon;
+                                return (
+                                  <button
+                                    key={s}
+                                    onClick={() => {
+                                      handleStatusChange(order.id, s);
+                                      setOpenDropdownId(null);
+                                    }}
+                                    disabled={updatingId === order.id}
+                                    className={`flex items-center gap-2 w-full px-3 py-2.5 text-xs text-left hover:bg-logo-rose/5 transition-colors disabled:opacity-50 ${order.status === s ? 'bg-logo-rose/10' : ''}`}
+                                  >
+                                    <Icon size={12} />
+                                    {cfg.label}
+                                  </button>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
                     </div>
                   </div>
                 );
@@ -267,6 +349,7 @@ const AdminOrders = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
               className="bg-white rounded-3xl w-full max-w-lg shadow-2xl border border-logo-rose/15 p-6 space-y-5 my-4"
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Modal header */}
               <div className="flex items-start justify-between gap-3">

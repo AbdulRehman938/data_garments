@@ -96,8 +96,9 @@ const ForgotPassword = () => {
   });
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <motion.div
+    <div className="min-h-screen flex items-start justify-center px-4 pt-20 md:pt-32">
+      <div className="w-full max-w-md mx-auto">
+        <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -252,6 +253,7 @@ const ForgotPassword = () => {
           </Link>
         </div>
       </motion.div>
+      </div>
     </div>
   );
 };

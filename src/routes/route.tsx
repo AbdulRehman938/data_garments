@@ -1,8 +1,17 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createBrowserRouter, Outlet } from 'react-router-dom';
-import { HomePage, Login, Signup, VerifyOtp, ProfileSettings, NotFound, Shop, ProductDetail } from '../pages';
-import ForgotPassword from '../pages/auth/ForgotPassword';
-import UpdatePassword from '../pages/auth/UpdatePassword';
+import { 
+  HomePage, 
+  Login, 
+  Signup, 
+  VerifyOtp, 
+  ForgotPassword, 
+  UpdatePassword,
+  ProfileSettings, 
+  NotFound, 
+  Shop, 
+  ProductDetail 
+} from '../pages';
 import AdminDashboard from '../pages/admin/AdminDashboard';
 import AdminCategories from '../pages/admin/AdminCategories';
 import AdminProducts from '../pages/admin/AdminProducts';
@@ -13,10 +22,10 @@ import AdminBulkUpload from '../pages/admin/AdminBulkUpload';
 import AdminServices from '../pages/admin/AdminServices';
 import AdminOrders from '../pages/admin/AdminOrders';
 import AdminBestSellers from '../pages/admin/AdminBestSellers';
+import AdminReviews from '../pages/admin/AdminReviews';
 import Header from '../components/common/Header';
 import Footer from '../components/common/Footer';
 import ScrollToTop from '../components/common/ScrollToTop';
-import Wishlist from '../pages/Wishlist';
 import Checkout from '../pages/Checkout';
 import About from '../pages/About';
 import Contact from '../pages/Contact';
@@ -36,7 +45,7 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen flex flex-col bg-bg-silk-glow">
     <ScrollToTop />
     <Header />
-    <div className="w-full grow flex items-center justify-center px-4 py-8 md:py-5 lg:py-10">
+    <div className="w-full grow flex items-start justify-center px-0 py-8 md:py-5 lg:py-10">
       {children}
     </div>
   </div>
@@ -56,7 +65,7 @@ export const router = createBrowserRouter([
       { path: 'contact', element: <Contact /> },
       { path: 'privacy', element: <Privacy /> },
       { path: 'terms', element: <Terms /> },
-      { path: 'lookbook', element: <Shop /> }, // redirect lookbook → shop
+      { path: 'lookbook', element: <Shop /> },
     ],
   },
 
@@ -87,7 +96,11 @@ export const router = createBrowserRouter([
   },
   {
     path: '/wishlist',
-    element: <AuthLayout><Wishlist /></AuthLayout>,
+    element: <AuthLayout><ProfileSettings /></AuthLayout>,
+  },
+  {
+    path: '/order-history',
+    element: <AuthLayout><ProfileSettings /></AuthLayout>,
   },
 
   /* ── Admin routes ── */
@@ -95,18 +108,19 @@ export const router = createBrowserRouter([
     path: '/admin',
     element: <AdminDashboard />,
     children: [
-      { index: true,                  element: null },            // dashboard renders inline
-      { path: 'dashboard',            element: null },
-      { path: 'categories',           element: <AdminCategories /> },
-      { path: 'products',             element: <AdminProducts /> },
-      { path: 'products/add',         element: <AdminAddProduct /> },
-      { path: 'bulk-upload',          element: <AdminBulkUpload /> },
-      { path: 'services',             element: <AdminServices /> },
-      { path: 'orders',               element: <AdminOrders /> },
-      { path: 'best-sellers',         element: <AdminBestSellers /> },
-      { path: 'users',                element: <AdminUsers /> },
-      { path: 'sales',                element: <AdminSales /> },
-      { path: 'profile-settings',     element: <ProfileSettings /> },
+      { index: true, element: <AdminDashboard /> },
+      { path: 'dashboard', element: <AdminDashboard /> },
+      { path: 'categories', element: <AdminCategories /> },
+      { path: 'products', element: <AdminProducts /> },
+      { path: 'products/add', element: <AdminAddProduct /> },
+      { path: 'bulk-upload', element: <AdminBulkUpload /> },
+      { path: 'services', element: <AdminServices /> },
+      { path: 'orders', element: <AdminOrders /> },
+      { path: 'reviews', element: <AdminReviews /> },
+      { path: 'best-sellers', element: <AdminBestSellers /> },
+      { path: 'users', element: <AdminUsers /> },
+      { path: 'sales', element: <AdminSales /> },
+      { path: 'profile-settings', element: <ProfileSettings /> },
     ],
   },
 

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiHeart, FiArrowLeft, FiShoppingBag, FiX, FiArrowRight } from 'react-icons/fi';
+import { FiHeart, FiArrowLeft, FiShoppingBag, FiX, FiArrowRight, FiUser } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import { useWishlist } from '../contexts/WishlistContext';
 import { useCart } from '../contexts/CartContext';
@@ -28,26 +28,48 @@ const Wishlist = () => {
   };
 
   return (
-    <div className="min-h-screen bg-bg-silk-glow px-4 py-6 md:py-10">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-auto bg-bg-silk-glow w-full py-0 px-3 md:px-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full md:max-w-3xl md:mx-auto md:px-0"
+      >
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <Link to="/profile-settings"
-            className="inline-flex items-center gap-2 text-logo-black/60 hover:text-logo-rose transition-colors font-sans text-sm mb-4">
-            <FiArrowLeft size={16} /> Back to Profile
+        <div className="mb-8 px-0 md:px-0 w-full">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-logo-black hover:text-logo-rose transition-colors duration-200 font-sans text-sm mb-4"
+          >
+            <FiArrowLeft size={16} />
+            Back to Home
           </Link>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-logo-rose/10 flex items-center justify-center">
-              <FiHeart size={18} className="text-action-bordeaux" />
-            </div>
-            <div>
-              <h1 className="font-serif text-3xl text-logo-black">My Wishlist</h1>
-              <p className="font-sans text-sm text-logo-black/50">
-                {wishlistItems.length} saved {wishlistItems.length === 1 ? 'item' : 'items'}
-              </p>
-            </div>
+          <h1 className="font-serif text-3xl md:text-4xl text-logo-black mt-4 mb-2">
+            My Wishlist
+          </h1>
+          <p className="font-sans text-sm text-logo-black/60">
+            {wishlistItems.length} saved {wishlistItems.length === 1 ? 'item' : 'items'}
+          </p>
+
+          {/* Quick nav tabs */}
+          <div className="flex gap-2 mt-4 flex-wrap">
+            <Link
+              to="/profile-settings"
+              className="flex items-center gap-1.5 px-4 py-2 border border-logo-rose/20 text-logo-black/60 hover:border-logo-rose hover:text-logo-rose rounded-full font-sans font-bold text-xs uppercase tracking-wide transition-all"
+            >
+              <FiUser size={12} /> Profile
+            </Link>
+            <span className="px-4 py-2 bg-action-bordeaux text-white rounded-full font-sans font-bold text-xs uppercase tracking-wide">
+              <FiHeart size={12} /> Wishlist
+            </span>
+            <Link
+              to="/order-history"
+              className="flex items-center gap-1.5 px-4 py-2 border border-logo-rose/20 text-logo-black/60 hover:border-logo-rose hover:text-logo-rose rounded-full font-sans font-bold text-xs uppercase tracking-wide transition-all"
+            >
+              <FiShoppingBag size={12} /> Orders
+            </Link>
           </div>
-        </motion.div>
+        </div>
 
         {isLoading ? (
           <div className="flex justify-center py-20">
@@ -56,7 +78,7 @@ const Wishlist = () => {
         ) : wishlistItems.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-            className="text-center py-20"
+            className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-logo-rose/20 p-8 text-center"
           >
             <div className="w-20 h-20 rounded-full bg-logo-rose/10 flex items-center justify-center mx-auto mb-5">
               <FiHeart size={32} className="text-logo-rose/40" />
@@ -135,7 +157,7 @@ const Wishlist = () => {
             </AnimatePresence>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };

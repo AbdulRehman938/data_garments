@@ -8,6 +8,20 @@ import { supabase } from '../../utils/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { uploadProfileImage } from '../../utils/storage';
 import { hashPassword } from '../../utils/password';
+
+// Lock body scroll when modal is open
+const useScrollLock = (isOpen: boolean) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+};
 import { useToast } from '../../components/common/Toast';
 
 interface Country {
@@ -45,6 +59,9 @@ const AdminUsers = () => {
   const [itemsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Lock body scroll when modal is open
+  useScrollLock(isAddModalOpen);
 
   // Country API state for add customer form
   const [countries, setCountries] = useState<Country[]>([]);
@@ -288,7 +305,7 @@ const AdminUsers = () => {
       </div>
 
       {/* Table / Cards */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden border-2 border-logo-rose/20">
+      <div className="bg-transparent rounded-2xl overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-logo-black/70">Loading customers...</div>
         ) : filteredUsers.length === 0 ? (
@@ -368,40 +385,40 @@ const AdminUsers = () => {
             </div>
 
             {/* Mobile Card Layout */}
-            <div className="md:hidden divide-y divide-logo-rose/10">
+            <div className="md:hidden space-y-3">
               {filteredUsers.map((user) => (
-                <div key={user.id} className="p-4 space-y-3">
+                <div key={user.id} className="bg-white rounded-2xl border border-logo-rose/20 shadow-sm p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       {user.profile_pic_url ? (
-                        <img src={user.profile_pic_url} alt={user.username} className="w-10 h-10 object-cover rounded-full shrink-0 border-2 border-logo-rose/20" />
+                        <img src={user.profile_pic_url} alt={user.username} className="w-12 h-12 object-cover rounded-full shrink-0 border-2 border-logo-rose/20" />
                       ) : (
-                        <div className="w-10 h-10 bg-linear-to-br from-logo-rose/20 to-pop-orchid/20 rounded-full flex items-center justify-center shrink-0 border-2 border-logo-rose/20">
+                        <div className="w-12 h-12 bg-linear-to-br from-logo-rose/20 to-pop-orchid/20 rounded-full flex items-center justify-center shrink-0 border-2 border-logo-rose/20">
                           <span className="text-logo-black font-bold">{user.username.charAt(0).toUpperCase()}</span>
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="font-bold text-logo-black truncate">{user.username}</p>
+                        <p className="font-bold text-sm text-logo-black truncate">{user.username}</p>
                         <p className="text-xs text-logo-black/60 truncate">{user.email}</p>
                       </div>
                     </div>
                     <button
                       onClick={() => handleDeleteCustomer(user.id, user.username)}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
                     >
                       <FiTrash2 size={16} />
                     </button>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-logo-rose/10">
                     <span className="text-xs text-logo-black/70">{new Date(user.created_at).toLocaleDateString()}</span>
                     {user.created_by ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-pop-orchid/10 text-pop-orchid rounded-full text-xs font-semibold">Admin Created</span>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-pop-orchid/10 text-pop-orchid rounded-full text-xs font-semibold">Admin Created</span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-logo-rose/10 text-logo-rose rounded-full text-xs font-semibold">Self Signed Up</span>
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-logo-rose/10 text-logo-rose rounded-full text-xs font-semibold">Self Signed Up</span>
                     )}
                     <button
                       onClick={() => handleToggleVerification(user.id, user.is_verified)}
-                      className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold transition-all ${user.is_verified
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold transition-all ${user.is_verified
                         ? 'bg-energy-apricot/20 text-energy-apricot'
                         : 'bg-logo-rose/20 text-logo-rose'
                       }`}
@@ -411,7 +428,7 @@ const AdminUsers = () => {
                     </button>
                   </div>
                   {(user.phone || user.address) && (
-                    <div className="space-y-1">
+                    <div className="space-y-1.5 pt-2 border-t border-logo-rose/10">
                       {user.phone && <div className="flex items-center gap-2 text-xs text-logo-black/70"><FiPhone size={12} />{user.phone}</div>}
                       {user.address && <div className="flex items-center gap-2 text-xs text-logo-black/70"><FiMapPin size={12} /><span className="truncate">{user.address}</span></div>}
                     </div>
@@ -458,7 +475,6 @@ const AdminUsers = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-              onClick={() => setIsAddModalOpen(false)}
             />
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}

@@ -89,7 +89,7 @@ const DescriptionBlock = ({ text }: { text: string }) => {
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, continueAsGuest } = useAuth();
   const { addToCart, openCart } = useCart();
   const { isInWishlist, addToWishlist, removeFromWishlist } = useWishlist();
 
@@ -183,7 +183,6 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = () => {
-    if (!isAuthenticated) { setAuthModalAction('cart'); setShowAuthModal(true); return; }
     if (!product) return;
     addToCart({
       id: product.id,
@@ -202,7 +201,6 @@ const ProductDetail = () => {
   const handleBuyNow = () => {
     if (!isAuthenticated) { setAuthModalAction('buy'); setShowAuthModal(true); return; }
     if (!product) return;
-    // Add to cart then go to checkout
     addToCart({
       id: product.id,
       name: product.name,
@@ -281,8 +279,25 @@ const ProductDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 bg-white p-5 md:p-10 rounded-4xl border border-logo-rose/10 shadow-[0_10px_40px_rgba(210,150,158,0.06)]">
 
           {/* ── Left: Gallery ── */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="relative aspect-2/3 max-h-[70vh] rounded-[1.75rem] overflow-hidden bg-bg-silk-glow/20 border border-logo-rose/10 flex items-center justify-center">
+          <div className="lg:col-span-7 flex flex-col lg:flex-row gap-4">
+            {/* Desktop vertical thumbnails */}
+            {allImages.length > 1 && (
+              <div className="hidden lg:flex flex-col gap-3 overflow-y-auto max-h-[70vh] shrink-0">
+                {allImages.map((img, idx) => (
+                  <button key={img.id ?? idx} onClick={() => setActiveImage(img.image_url)}
+                    className={`w-20 aspect-4/5 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                      activeImage === img.image_url
+                        ? 'border-action-bordeaux shadow-md'
+                        : 'border-logo-rose/10 hover:border-logo-rose/30 opacity-70 hover:opacity-100'
+                    }`}>
+                    <img src={img.image_url} alt="" className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Main image */}
+            <div className="relative rounded-[1.75rem] overflow-hidden bg-bg-silk-glow/20 border border-logo-rose/10 flex items-center justify-center flex-1 min-w-0">
               {activeImage ? (
                 <motion.img
                   key={activeImage}
@@ -291,7 +306,7 @@ const ProductDetail = () => {
                   transition={{ duration: 0.3 }}
                   src={activeImage}
                   alt={product.name}
-                  className="w-full h-full object-contain transition-transform duration-500 hover:scale-105"
+                  className="max-w-full max-h-[70vh] object-contain transition-transform duration-500 hover:scale-105"
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center text-logo-black/30">
@@ -307,8 +322,9 @@ const ProductDetail = () => {
               ) : null}
             </div>
 
+            {/* Mobile horizontal thumbnails */}
             {allImages.length > 1 && (
-              <div className="flex gap-3 overflow-x-auto pb-2">
+              <div className="flex lg:hidden gap-3 overflow-x-auto pb-2">
                 {allImages.map((img, idx) => (
                   <button key={img.id ?? idx} onClick={() => setActiveImage(img.image_url)}
                     className={`w-20 md:w-24 aspect-4/5 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
@@ -530,14 +546,24 @@ const ProductDetail = () => {
                 <div className="w-14 h-14 rounded-2xl bg-logo-rose/10 flex items-center justify-center mx-auto mb-4">
                   <FiLock size={26} className="text-action-bordeaux" />
                 </div>
-                <h3 className="font-serif text-xl text-logo-black mb-2">Sign In Required</h3>
-                <p className="font-sans text-sm text-logo-black/60 leading-relaxed mb-6">
-                  {authModalAction === 'cart'
-                    ? 'Please sign in to add items to your bag.'
-                    : authModalAction === 'buy'
-                    ? 'Please sign in to purchase this product.'
-                    : 'Please sign in to save items to your wishlist.'}
+                <h3 className="font-serif text-xl text-logo-black mb-2">You Are Not Logged In</h3>
+                <p className="font-sans text-sm text-logo-black/60 leading-relaxed mb-4">
+                  Sign in to unlock a better shopping experience:
                 </p>
+                <ul className="text-left space-y-1.5 mb-6">
+                  <li className="flex items-start gap-2 text-sm text-logo-black/70 font-sans">
+                    <span className="text-action-bordeaux mt-0.5">•</span>
+                    Organize and manage your wishlist
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-logo-black/70 font-sans">
+                    <span className="text-action-bordeaux mt-0.5">•</span>
+                    View all your past orders in one place
+                  </li>
+                  <li className="flex items-start gap-2 text-sm text-logo-black/70 font-sans">
+                    <span className="text-action-bordeaux mt-0.5">•</span>
+                    Save items to your bag and checkout seamlessly
+                  </li>
+                </ul>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowAuthModal(false)}
@@ -545,12 +571,21 @@ const ProductDetail = () => {
                   >
                     Cancel
                   </button>
-                  <button
-                    onClick={() => { setShowAuthModal(false); navigate('/login'); }}
-                    className="flex-1 py-2.5 bg-action-bordeaux hover:bg-[#460416] text-white rounded-xl text-sm font-semibold transition-all cursor-pointer font-sans"
-                  >
-                    Sign In
-                  </button>
+{authModalAction === 'buy' ? (
+  <button
+    onClick={() => { setShowAuthModal(false); continueAsGuest(); }}
+    className="flex-1 py-2.5 bg-action-bordeaux hover:bg-[#460416] text-white rounded-xl text-sm font-semibold transition-all cursor-pointer font-sans"
+  >
+    Continue as Guest
+  </button>
+) : (
+  <button
+    onClick={() => { setShowAuthModal(false); navigate('/login'); }}
+    className="flex-1 py-2.5 bg-action-bordeaux hover:bg-[#460416] text-white rounded-xl text-sm font-semibold transition-all cursor-pointer font-sans"
+  >
+    Sign In
+  </button>
+)}
                 </div>
                 <Link
                   to="/signup"

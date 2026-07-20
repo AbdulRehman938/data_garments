@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiArrowRight } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
@@ -13,6 +13,7 @@ const Login = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loginType, setLoginType] = useState<'email' | 'username'>('email');
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
 
   const validationSchema = Yup.object().shape({
     email: loginType === 'email'
@@ -61,6 +62,14 @@ const Login = () => {
           return;
         }
 
+        if (!user.is_verified) {
+          formik.setStatus('Your email is not verified. Please verify your email to continue.');
+          setUnverifiedEmail(user.email);
+          return;
+        }
+
+        setUnverifiedEmail(null);
+
         const userData = {
           id: user.id,
           username: user.username,
@@ -100,19 +109,7 @@ const Login = () => {
       transition={{ duration: 0.5 }}
       className="w-full max-w-5xl flex flex-col lg:flex-row gap-6 lg:gap-8 items-center justify-center mx-auto"
     >
-      {/* Left Side - Image Placeholder */}
-      <div className="hidden lg:flex flex-1 h-[480px]">
-        <div className="w-full h-full bg-white/60 backdrop-blur-sm rounded-3xl border border-logo-rose/20 shadow-xl overflow-hidden flex items-center justify-center">
-          <div className="text-center p-8">
-            <p className="font-serif text-2xl text-logo-black/40 mb-2">Image Placeholder</p>
-            <p className="font-sans text-sm text-logo-black/30">
-              Required: Editorial fashion image<br />
-              Size: 800x1000px (4:5 aspect ratio)<br />
-              Style: Elegant, feminine, luxury
-            </p>
-          </div>
-        </div>
-      </div>
+     
 
       {/* Right Side - Login Card */}
       <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-logo-rose/20 p-5 md:p-6 lg:p-8 md:pt-1 lg:pt-3">
@@ -226,9 +223,18 @@ const Login = () => {
 
           {/* Status error (replaces alert) */}
           {formik.status && (
-            <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-sans">
+            <div className="flex flex-col items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600 font-sans">
               <span className="shrink-0">⚠️</span>
               {formik.status}
+              {unverifiedEmail && (
+                <Link
+                  to="/verify-otp"
+                  state={{ email: unverifiedEmail }}
+                  className="mt-1 w-full py-2 bg-action-bordeaux hover:bg-[#460416] text-white rounded-lg text-xs font-bold text-center transition-all"
+                >
+                  Verify Email
+                </Link>
+              )}
             </div>
           )}
 

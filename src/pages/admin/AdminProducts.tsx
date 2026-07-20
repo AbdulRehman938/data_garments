@@ -8,6 +8,20 @@ import { supabase } from '../../utils/supabase';
 import { uploadMultipleImages, deleteImage } from '../../utils/cloudinary';
 import { useToast } from '../../components/common/Toast';
 import { CustomSelect, MultiTagInput } from '../../components/common/CustomSelect';
+
+// Lock body scroll when modal is open
+const useScrollLock = (isOpen: boolean) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+};
 import { SERVICE_ICONS, type Service } from './AdminServices';
 
 interface Product {
@@ -80,6 +94,9 @@ const AdminProducts = () => {
   const [itemsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [imageError, setImageError] = useState('');
+
+  // Lock body scroll when modal is open
+  useScrollLock(isModalOpen);
 
   useEffect(() => {
     fetchProducts();
@@ -372,7 +389,7 @@ const AdminProducts = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
-        className="bg-white rounded-2xl shadow-sm overflow-hidden border border-logo-rose/20"
+        className=" rounded-2xl overflow-hidden "
       >
         {isLoading ? (
           <div className="p-8 text-center text-logo-black/60">Loading...</div>
@@ -429,28 +446,27 @@ const AdminProducts = () => {
             </div>
 
             {/* Mobile Card Layout */}
-            <div className="md:hidden divide-y divide-logo-rose/10">
+            <div className="md:hidden space-y-3">
               {filteredProducts.map((product) => {
                 const category = categories.find((c) => c.id === product.category_id);
                 return (
-                  <div key={product.id} className="p-4 flex items-start gap-3">
+                  <div key={product.id} className="bg-white rounded-2xl border border-logo-rose/20 shadow-sm p-4 flex items-start gap-4">
                     {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="w-16 h-16 object-cover rounded-xl shrink-0" />
+                      <img src={product.image_url} alt={product.name} className="w-20 h-20 object-cover rounded-xl shrink-0" />
                     ) : (
-                      <div className="w-16 h-16 bg-bg-silk-glow rounded-xl flex items-center justify-center shrink-0"><FiImage className="text-logo-black/40" size={20} /></div>
+                      <div className="w-20 h-20 bg-bg-silk-glow rounded-xl flex items-center justify-center shrink-0"><FiImage className="text-logo-black/40" size={24} /></div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-logo-black truncate">{product.name}</p>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        <span className="text-xs font-medium text-action-bordeaux">PKR {product.price.toLocaleString()}</span>
+                      <p className="font-semibold text-sm text-logo-black truncate">{product.name}</p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <span className="text-xs font-bold text-action-bordeaux">PKR {product.price.toLocaleString()}</span>
                         <span className="text-xs text-logo-black/50">Stock: {product.stock}</span>
-                        {category && <span className="text-xs bg-logo-rose/10 text-logo-rose px-2 py-0.5 rounded-full">{category.name}</span>}
                       </div>
-                      {product.description && <p className="text-xs text-logo-black/50 mt-1 line-clamp-2">{product.description}</p>}
+                      {category && <span className="inline-block mt-2 text-xs bg-logo-rose/10 text-logo-rose px-2.5 py-1 rounded-full">{category.name}</span>}
                     </div>
-                    <div className="flex flex-col gap-1 shrink-0">
-                      <button onClick={() => handleEdit(product)} className="p-2 text-logo-rose hover:bg-logo-rose/10 rounded-lg transition-colors"><FiEdit2 size={16} /></button>
-                      <button onClick={() => handleDelete(product.id)} className="p-2 text-logo-rose hover:bg-logo-rose/10 rounded-lg transition-colors"><FiTrash2 size={16} /></button>
+                    <div className="flex flex-col gap-2 shrink-0">
+                      <button onClick={() => handleEdit(product)} className="p-2.5 text-logo-rose hover:bg-logo-rose/10 rounded-xl transition-colors"><FiEdit2 size={16} /></button>
+                      <button onClick={() => handleDelete(product.id)} className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><FiTrash2 size={16} /></button>
                     </div>
                   </div>
                 );
@@ -474,11 +490,12 @@ const AdminProducts = () => {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 overflow-y-auto" onClick={() => setIsModalOpen(false)}>
           <motion.div
             initial={{ y: 80, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             className="bg-white rounded-t-2xl sm:rounded-2xl p-5 md:p-6 w-full sm:max-w-lg max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
           >
             <h2 className="font-serif text-2xl text-logo-black mb-4">
               {editingProduct ? 'Edit Product' : 'Add Product'}

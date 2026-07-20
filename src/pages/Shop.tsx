@@ -34,6 +34,7 @@ interface Category {
   name: string;
   description: string | null;
   image_url: string | null;
+  product_count?: number;
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -65,6 +66,7 @@ const Shop = () => {
   const [products, setProducts]       = useState<Product[]>([]);
   const [categories, setCategories]   = useState<Category[]>([]);
   const [totalCount, setTotalCount]   = useState(0);
+  const [totalProductsCount, setTotalProductsCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading]     = useState(true);
   const [hoveredId, setHoveredId]     = useState<string | null>(null);
@@ -90,12 +92,33 @@ const Shop = () => {
   /* ─── Fetch categories (sidebar) ─── */
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
+      const { data: categories } = await supabase
         .from('categories')
         .select('*')
         .not('name', 'ilike', '__SYSTEM_%')
         .order('created_at', { ascending: false });
-      setCategories(data || []);
+      
+      // Fetch product counts for all categories in a single query
+      const { data: productCounts } = await supabase
+        .from('products')
+        .select('category_id')
+        .not('category_id', 'is', null);
+      
+      // Count products per category
+      const countMap: Record<string, number> = {};
+      let totalAllProducts = 0;
+      (productCounts || []).forEach((p: any) => {
+        countMap[p.category_id] = (countMap[p.category_id] || 0) + 1;
+        totalAllProducts++;
+      });
+      
+      const categoriesWithCounts = (categories || []).map(cat => ({
+        ...cat,
+        product_count: countMap[cat.id] || 0
+      }));
+      
+      setCategories(categoriesWithCounts);
+      setTotalProductsCount(totalAllProducts);
     })();
   }, []);
 
@@ -214,14 +237,14 @@ const Shop = () => {
     <div className="bg-bg-silk-glow min-h-screen font-sans pb-24">
 
       {/* ── Slim Page Header ── */}
-      <div className="bg-white border-b border-logo-rose/10 px-6 md:px-12 lg:px-16 py-4">
-        <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+      <div className="bg-white border-b border-logo-rose/10 px-6 md:px-12 lg:px-16 pt-5 lg:pt-0">
+        <div className="max-w-[1600px] h-auto max-h-[7rem] pt-0 mx-auto flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3 relative -top-2">
             <Link to="/" className="inline-flex items-center gap-1.5 text-logo-rose hover:text-action-bordeaux transition-colors text-xs font-semibold">
               <FiArrowLeft size={14} /> Home
             </Link>
             <span className="text-logo-black/20">/</span>
-            <h1 className="font-serif text-xl md:text-2xl text-logo-black">
+            <h1 className="font-serif text-lg my-0 py-0 md:text-xl text-logo-black">
               {activeCategory ? activeCategory.name : 'All Collections'}
             </h1>
           </div>
@@ -249,21 +272,23 @@ const Shop = () => {
             <div className="flex flex-col gap-1.5">
               <button
                 onClick={() => handleCategory(null)}
-                className={`w-full text-left px-3.5 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                className={`w-full text-left px-3.5 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer flex items-center justify-between ${
                   !activeCategoryId ? 'bg-action-bordeaux text-white shadow-sm' : 'hover:bg-white text-logo-black border border-logo-rose/10 hover:border-logo-rose/25'
                 }`}
               >
                 All Collections
+                <span className="text-xs font-bold opacity-90">({totalProductsCount})</span>
               </button>
               {categories.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => handleCategory(cat.id)}
-                  className={`w-full text-left px-3.5 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${
+                  className={`w-full text-left px-3.5 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer flex items-center justify-between ${
                     activeCategoryId === cat.id ? 'bg-action-bordeaux text-white shadow-sm' : 'hover:bg-white text-logo-black border border-logo-rose/10 hover:border-logo-rose/25'
                   }`}
                 >
                   {cat.name}
+                  <span className="text-xs font-bold opacity-90">({cat.product_count || 0})</span>
                 </button>
               ))}
             </div>
@@ -592,13 +617,15 @@ const Shop = () => {
                 <h3 className="text-xs font-bold uppercase tracking-widest text-logo-black/50 mb-3">Collections</h3>
                 <div className="flex flex-col gap-1.5">
                   <button onClick={() => { handleCategory(null); setFiltersOpen(false); }}
-                    className={`w-full text-left px-3.5 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${!activeCategoryId ? 'bg-action-bordeaux text-white' : 'border border-logo-rose/10 text-logo-black'}`}>
+                    className={`w-full text-left px-3.5 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer flex items-center justify-between ${!activeCategoryId ? 'bg-action-bordeaux text-white' : 'border border-logo-rose/10 text-logo-black'}`}>
                     All Collections
+                    <span className="text-xs font-bold opacity-90">({totalProductsCount})</span>
                   </button>
                   {categories.map((cat) => (
                     <button key={cat.id} onClick={() => { handleCategory(cat.id); setFiltersOpen(false); }}
-                      className={`w-full text-left px-3.5 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer ${activeCategoryId === cat.id ? 'bg-action-bordeaux text-white' : 'border border-logo-rose/10 text-logo-black'}`}>
+                      className={`w-full text-left px-3.5 py-2 rounded-xl text-sm font-medium transition-all cursor-pointer flex items-center justify-between ${activeCategoryId === cat.id ? 'bg-action-bordeaux text-white' : 'border border-logo-rose/10 text-logo-black'}`}>
                       {cat.name}
+                      <span className="text-xs font-bold opacity-90">({cat.product_count || 0})</span>
                     </button>
                   ))}
                 </div>

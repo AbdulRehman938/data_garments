@@ -10,14 +10,14 @@ import { ToastProvider } from './components/common/Toast'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <CartProvider>
-        <WishlistProvider>
-          <ToastProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <CartProvider>
+          <WishlistProvider>
             <RouterProvider router={router} />
-          </ToastProvider>
-        </WishlistProvider>
-      </CartProvider>
-    </AuthProvider>
+          </WishlistProvider>
+        </CartProvider>
+      </AuthProvider>
+    </ToastProvider>
   </StrictMode>,
 )

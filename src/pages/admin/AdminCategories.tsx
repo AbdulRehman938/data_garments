@@ -9,6 +9,20 @@ import { useToast } from '../../components/common/Toast';
 
 const SYSTEM_SETTINGS_KEY = '__SYSTEM_SETTINGS__';
 
+// Lock body scroll when modal is open
+const useScrollLock = (isOpen: boolean) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+};
+
 interface Category {
   id: string;
   name: string;
@@ -30,6 +44,9 @@ const AdminCategories = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string>('');
+
+  // Lock body scroll when modal is open
+  useScrollLock(isModalOpen);
 
   const categorySchema = Yup.object({
     name: Yup.string()
@@ -396,46 +413,50 @@ const AdminCategories = () => {
               </div>
 
               {/* Mobile Card Layout */}
-              <div className="md:hidden divide-y divide-logo-rose/10">
+              <div className="md:hidden space-y-3">
                 {filteredCategories.map((category) => (
-                  <div key={category.id} className="p-4 flex items-start gap-3">
-                    {category.image_url ? (
-                      <img src={category.image_url} alt={category.name} className="w-16 h-16 object-cover rounded-xl shrink-0" />
-                    ) : (
-                      <div className="w-16 h-16 bg-bg-silk-glow rounded-xl flex items-center justify-center shrink-0">
-                        <FiImage className="text-logo-black/40" size={20} />
+                  <div key={category.id} className="bg-white rounded-2xl border border-logo-rose/20 shadow-sm p-4 space-y-3">
+                    <div className="flex items-start gap-4">
+                      {category.image_url ? (
+                        <img src={category.image_url} alt={category.name} className="w-20 h-20 object-cover rounded-xl shrink-0" />
+                      ) : (
+                        <div className="w-20 h-20 bg-bg-silk-glow rounded-xl flex items-center justify-center shrink-0">
+                          <FiImage className="text-logo-black/40" size={24} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <p className="font-semibold text-sm text-logo-black">{category.name}</p>
+                          {featuredIds.includes(category.id) && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-luxury-gold bg-luxury-gold/10 rounded-full">
+                              <FiStar size={9} /> Featured
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-logo-black/50 font-semibold">Low Stock:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={lowStockThresholds[category.id] ?? 5}
+                            onChange={(e) => {
+                              setLowStockThresholds(prev => ({
+                                ...prev,
+                                [category.id]: Math.max(0, parseInt(e.target.value) || 0)
+                              }));
+                            }}
+                            className="w-16 px-2 py-1 border border-logo-rose/20 rounded-lg text-sm focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20"
+                          />
+                        </div>
                       </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold text-logo-black">{category.name}</p>
-                        {featuredIds.includes(category.id) && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-luxury-gold bg-luxury-gold/10 rounded-full">
-                            <FiStar size={9} /> Featured
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-2 flex items-center gap-2">
-                        <span className="text-xs text-logo-black/50 font-semibold">Low Stock Threshold:</span>
-                        <input
-                          type="number"
-                          min="0"
-                          value={lowStockThresholds[category.id] ?? 5}
-                          onChange={(e) => {
-                            setLowStockThresholds(prev => ({
-                              ...prev,
-                              [category.id]: Math.max(0, parseInt(e.target.value) || 0)
-                            }));
-                          }}
-                          className="w-16 px-2 py-1 border border-logo-rose/20 rounded-lg text-sm focus:outline-none focus:border-logo-rose focus:ring-2 focus:ring-logo-rose/20"
-                        />
-                      </div>
-                      {category.description && <p className="text-sm text-logo-black/60 mt-0.5 line-clamp-2">{category.description}</p>}
-                      <p className="text-xs text-logo-black/40 mt-1">{new Date(category.created_at).toLocaleDateString()}</p>
                     </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => handleEdit(category)} className="p-2 text-logo-rose hover:bg-logo-rose/10 rounded-lg transition-colors"><FiEdit2 size={16} /></button>
-                      <button onClick={() => handleDelete(category.id)} className="p-2 text-logo-rose hover:bg-logo-rose/10 rounded-lg transition-colors"><FiTrash2 size={16} /></button>
+                    {category.description && <p className="text-sm text-logo-black/60 line-clamp-2 pt-2 border-t border-logo-rose/10">{category.description}</p>}
+                    <div className="flex items-center justify-between pt-2 border-t border-logo-rose/10">
+                      <p className="text-xs text-logo-black/40">{new Date(category.created_at).toLocaleDateString()}</p>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleEdit(category)} className="p-2.5 text-logo-rose hover:bg-logo-rose/10 rounded-xl transition-colors"><FiEdit2 size={16} /></button>
+                        <button onClick={() => handleDelete(category.id)} className="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition-colors"><FiTrash2 size={16} /></button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -459,10 +480,11 @@ const AdminCategories = () => {
 
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+          <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" onClick={() => setIsModalOpen(false)}>
             <motion.div
               initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
               className="bg-white rounded-t-2xl sm:rounded-2xl p-5 md:p-6 w-full sm:max-w-md max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
             >
               <h2 className="font-serif text-xl md:text-2xl text-logo-black mb-4">{editingCategory ? 'Edit Category' : 'Add Category'}</h2>
               <form onSubmit={formik.handleSubmit} className="space-y-4">

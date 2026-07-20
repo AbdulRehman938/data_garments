@@ -1,7 +1,5 @@
 /* eslint-disable react-refresh/only-export-components, react-hooks/preserve-manual-memoization */
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
-import { useAuth } from './AuthContext';
-import { supabase } from '../utils/supabase';
 
 export interface CartItem {
   id: string;
@@ -18,7 +16,6 @@ interface CartContextType {
   cartCount: number;
   cartTotal: number;
   isCartOpen: boolean;
-  isLoadingCart: boolean;
   addToCart: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
   removeFromCart: (id: string, options?: { size?: string; color?: string }) => void;
   changeQty: (id: string, delta: number, options?: { size?: string; color?: string }) => void;
@@ -30,92 +27,35 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const CART_KEY_PREFIX = 'dg_cart_';
-
-const getCartKey = (userId: string | null) => {
-  if (userId) {
-    return `${CART_KEY_PREFIX}${userId}`;
-  }
-  return `${CART_KEY_PREFIX}guest`;
-};
+const CART_KEY = 'dg_cart_persistent';
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
-  const cartKey = getCartKey(user?.id || null);
-
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     try {
-      const key = getCartKey(user?.id || null);
-      const stored = localStorage.getItem(key);
+      const stored = localStorage.getItem(CART_KEY);
       return stored ? JSON.parse(stored) : [];
     } catch { return []; }
   });
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isLoadingCart, setIsLoadingCart] = useState(false);
 
-  // Load saved cart from DB when user logs in
+  // Persist to localStorage on every change
   useEffect(() => {
-    const loadCartFromDB = async () => {
-      if (!user?.id) {
-        // No user - load guest cart from localStorage
-        try {
-          const key = getCartKey(null);
-          const stored = localStorage.getItem(key);
-          setCartItems(stored ? JSON.parse(stored) : []);
-        } catch {
-          setCartItems([]);
-        }
-        return;
-      }
+    localStorage.setItem(CART_KEY, JSON.stringify(cartItems));
+  }, [cartItems]);
 
-      setIsLoadingCart(true);
+  // Save cart before tab closes
+  useEffect(() => {
+    const handleBeforeUnload = () => {
       try {
-        // First try to load from DB
-        const { data, error } = await supabase
-          .from('carts')
-          .select('cart_data')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (data?.cart_data) {
-          const dbCart = data.cart_data as CartItem[];
-          setCartItems(dbCart);
-          // Also sync to localStorage
-          localStorage.setItem(cartKey, JSON.stringify(dbCart));
-        } else {
-          // No cart in DB - check localStorage
-          try {
-            const key = getCartKey(user.id);
-            const stored = localStorage.getItem(key);
-            setCartItems(stored ? JSON.parse(stored) : []);
-          } catch {
-            setCartItems([]);
-          }
-        }
-      } catch (err) {
-        console.error('Error loading cart from DB:', err);
-        // Fallback to localStorage if DB fails
-        try {
-          const key = getCartKey(user.id);
-          const stored = localStorage.getItem(key);
-          setCartItems(stored ? JSON.parse(stored) : []);
-        } catch {
-          setCartItems([]);
-        }
-      } finally {
-        setIsLoadingCart(false);
+        localStorage.setItem(CART_KEY, JSON.stringify(cartItems));
+      } catch (e) {
+        console.error('Failed to save cart before unload:', e);
       }
     };
 
-    loadCartFromDB();
-  }, [user?.id, cartKey]);
-
-  // Persist to localStorage
-  useEffect(() => {
-    localStorage.setItem(cartKey, JSON.stringify(cartItems));
-  }, [cartItems, cartKey]);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [cartItems]);
 
   // Lock body scroll when cart open
   useEffect(() => {
@@ -165,50 +105,13 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const clearCart = useCallback(() => {
     setCartItems([]);
-    // Also clear from localStorage
-    if (user) {
-      localStorage.removeItem(getCartKey(user.id));
-    } else {
-      localStorage.removeItem(getCartKey(null));
-    }
-  }, [user]);
+    localStorage.removeItem(CART_KEY);
+  }, []);
 
   const saveCartToDB = useCallback(async () => {
-    if (!user?.id) return;
-
-    try {
-      // Check if cart exists for user
-      const { data: existingCart } = await supabase
-        .from('carts')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (existingCart) {
-        // Update existing cart
-        await supabase
-          .from('carts')
-          .update({ 
-            cart_data: cartItems, 
-            updated_at: new Date().toISOString() 
-          })
-          .eq('id', existingCart.id);
-      } else {
-        // Insert new cart
-        await supabase
-          .from('carts')
-          .insert({ 
-            user_id: user.id, 
-            cart_data: cartItems,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString() 
-          });
-      }
-    } catch (err) {
-      console.error('Error saving cart to DB:', err);
-      throw err;
-    }
-  }, [user?.id, cartItems]);
+    // DB sync disabled until carts table exists in Supabase
+    return;
+  }, []);
 
   const openCart  = useCallback(() => setIsCartOpen(true), []);
   const closeCart = useCallback(() => setIsCartOpen(false), []);
@@ -222,7 +125,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       cartCount, 
       cartTotal, 
       isCartOpen, 
-      isLoadingCart,
       addToCart, 
       removeFromCart, 
       changeQty, 

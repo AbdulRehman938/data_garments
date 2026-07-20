@@ -3,7 +3,7 @@ import { FiArrowLeft } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 
 const About = () => (
-  <div className="bg-bg-silk-glow min-h-screen pb-24 font-sans">
+  <div className="bg-bg-silk-glow min-h-screen pb-5 font-sans">
     <div className="max-w-3xl mx-auto px-6 md:px-8 py-12">
       <Link
         to="/"

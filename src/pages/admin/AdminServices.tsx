@@ -8,6 +8,20 @@ import {
 } from 'react-icons/fi';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
+
+// Lock body scroll when modal is open
+const useScrollLock = (isOpen: boolean) => {
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+};
 import { supabase } from '../../utils/supabase';
 import { useToast } from '../../components/common/Toast';
 
@@ -42,6 +56,9 @@ const AdminServices = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Lock body scroll when modal is open
+  useScrollLock(isModalOpen);
 
   const fetchServices = useCallback(async () => {
     setIsLoading(true);
@@ -276,6 +293,7 @@ const AdminServices = () => {
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
               transition={{ type: 'spring', stiffness: 340, damping: 28 }}
               className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-logo-rose/15"
+              onClick={(e) => e.stopPropagation()}
             >
               <h2 className="font-serif text-xl text-logo-black mb-5">
                 {editing ? 'Edit Service Badge' : 'Add Service Badge'}

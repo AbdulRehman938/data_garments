@@ -279,7 +279,7 @@ const Header = () => {
               </motion.button>
 
               {/* ─── User Profile ─── */}
-              {isAuthenticated && (
+              {isAuthenticated && !user?.isGuest && user?.role !== 'GUEST' && (
                 <div className="relative" ref={profileDropdownRef}>
                   <motion.button
                     onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
@@ -418,7 +418,7 @@ const Header = () => {
                     ))}
                   </div>
                   <div className="space-y-4 pt-1">
-                    {!isAuthenticated ? (
+                    {!isAuthenticated || user?.isGuest || user?.role === 'GUEST' ? (
                       <div className="grid grid-cols-2 gap-3">
                         <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center font-sans text-xs font-bold py-2.5 border border-action-bordeaux/20 hover:border-action-bordeaux text-logo-black rounded-lg transition-all duration-300 cursor-pointer">Sign In</Link>
                         <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center font-sans text-xs font-bold py-2.5 bg-action-bordeaux hover:bg-[#460416] text-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer">Create Account</Link>

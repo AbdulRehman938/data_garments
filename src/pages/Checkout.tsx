@@ -1,13 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiArrowLeft, FiShoppingBag, FiTruck, FiCheck } from 'react-icons/fi';
+import { FiArrowLeft, FiShoppingBag, FiTruck, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../utils/supabase';
+
+interface DeliveryOption {
+  id: string;
+  label: string;
+  description: string;
+  extraCharge?: number;
+  isActive?: boolean;
+}
 
 const WHATSAPP_NUMBER = '923167797719';
 
@@ -19,9 +27,9 @@ const calculateDeliveryCharge = (totalItems: number): number => {
   return baseCharge + (totalItems - 3) * 100;
 };
 
-const DELIVERY_OPTIONS = [
+const DELIVERY_OPTIONS: DeliveryOption[] = [
   { id: 'standard', label: 'Standard Delivery', description: 'Nationwide — 3–5 business days' },
-  { id: 'express', label: 'Express Delivery', description: 'Nationwide — 1–2 business days', extraCharge: 150 },
+  { id: 'express', label: 'Express Delivery', description: 'Nationwide — 1–2 business days', extraCharge: 150, isActive: true },
 ];
 
 // Comprehensive list of Pakistani cities for validation
@@ -70,11 +78,11 @@ const checkoutSchema = Yup.object({
     .min(3, 'Min 3 characters')
     .max(80, 'Max 80 characters')
     .required('Full name is required'),
-  
+
   phone: Yup.string()
     .matches(/^(03\d{9}|\+923\d{9}|923\d{9})$/, 'Enter a valid Pakistani number (03XXXXXXXXX, +923XXXXXXXXX, or 923XXXXXXXXX)')
     .required('Phone number is required'),
-  
+
   address: Yup.string()
     .trim()
     .min(10, 'Please enter a complete address')
@@ -90,7 +98,7 @@ const checkoutSchema = Yup.object({
       return !hasForbiddenCountry && (hasPakistanComponents || lowerValue.length >= 15);
     })
     .required('Address is required'),
-  
+
   city: Yup.string()
     .trim()
     .min(2, 'Min 2 characters')
@@ -98,19 +106,19 @@ const checkoutSchema = Yup.object({
     .test('valid-city', 'Please enter a valid Pakistani city', (value) => {
       if (!value) return false;
       const normalizedCity = value.toLowerCase().trim();
-      return PAKISTANI_CITIES.some(city => 
-        city.toLowerCase().includes(normalizedCity) || 
+      return PAKISTANI_CITIES.some(city =>
+        city.toLowerCase().includes(normalizedCity) ||
         normalizedCity.includes(city.toLowerCase()) ||
         city.toLowerCase() === normalizedCity
       );
     })
     .required('City is required'),
-  
+
   note: Yup.string()
     .trim()
     .max(300, 'Max 300 characters')
     .optional(),
-  
+
   delivery: Yup.string()
     .required('Please select a delivery option'),
 });
@@ -119,8 +127,52 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { cartItems, cartTotal, clearCart } = useCart();
   const { user } = useAuth();
+
+  const isGuest = user?.isGuest === true || !user?.role || user?.role === 'GUEST';
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [availableDeliveryOptions, setAvailableDeliveryOptions] = useState<DeliveryOption[]>(DELIVERY_OPTIONS);
+
+  console.log('Checkout - User:', user, 'isGuest:', isGuest);
+
+  // Fetch product details to determine available delivery options
+  useEffect(() => {
+    const fetchAvailableOptions = async () => {
+      if (cartItems.length === 0) {
+        setAvailableDeliveryOptions(DELIVERY_OPTIONS);
+        return;
+      }
+
+      const productIds = [...new Set(cartItems.map(item => item.id))];
+
+      try {
+        const { data: products, error } = await supabase
+          .from('products')
+          .select('id, express_delivery_available')
+          .in('id', productIds);
+
+        if (error) {
+          console.error('Failed to fetch product details:', error);
+          setAvailableDeliveryOptions(DELIVERY_OPTIONS);
+          return;
+        }
+
+        const hasExpressAvailable = products?.some(p => p.express_delivery_available) ?? false;
+
+        if (hasExpressAvailable) {
+          setAvailableDeliveryOptions(DELIVERY_OPTIONS);
+        } else {
+          setAvailableDeliveryOptions([DELIVERY_OPTIONS[0]]);
+        }
+      } catch (error) {
+        console.error('Error fetching delivery options:', error);
+        setAvailableDeliveryOptions(DELIVERY_OPTIONS);
+      }
+    };
+
+    fetchAvailableOptions();
+  }, [cartItems]);
 
   const formik = useFormik<CheckoutFormValues>({
     initialValues: {
@@ -129,35 +181,29 @@ const Checkout = () => {
       address: '',
       city: '',
       note: '',
-      delivery: 'standard',
+      delivery: availableDeliveryOptions[0]?.id || 'standard',
     },
     validationSchema: checkoutSchema,
     onSubmit: async (values) => {
       if (cartItems.length === 0) return;
       setIsSubmitting(true);
 
-      // Calculate total number of items in cart
       const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-      
-      // Calculate base delivery charge
       const baseDeliveryCharge = calculateDeliveryCharge(totalItems);
-      
-      const deliveryOption = DELIVERY_OPTIONS.find((d) => d.id === values.delivery)!;
+      const deliveryOption = availableDeliveryOptions.find((d) => d.id === values.delivery)!;
       const deliveryCharge = baseDeliveryCharge + (deliveryOption.extraCharge || 0);
       const grandTotal = cartTotal + deliveryCharge;
 
-      // Normalize phone number to 03XXXXXXXXX format
       const normalizePhone = (phone: string) => {
-        let cleaned = phone.replace(/\D/g, ''); // Remove all non-digit characters
+        let cleaned = phone.replace(/\D/g, '');
         if (cleaned.startsWith('92')) {
-          cleaned = '0' + cleaned.slice(2); // Convert 923XXXXXXXXX to 03XXXXXXXXX
+          cleaned = '0' + cleaned.slice(2);
         }
         return cleaned;
       };
 
       const normalizedPhone = normalizePhone(values.phone);
-      
-      // Build WhatsApp message FIRST and open it immediately
+
       const itemLines = cartItems.map((item) => {
         let line = `• ${item.name} x${item.quantity} — PKR ${(item.price * item.quantity).toLocaleString()}`;
         if (item.size) line += ` | Size: ${item.size}`;
@@ -186,63 +232,75 @@ const Checkout = () => {
         `Remaining amount (PKR ${cartTotal.toLocaleString()}) will be collected via Cash on Delivery.`,
       ].filter((l) => l !== '').join('\n');
 
-      const encodedMsg = encodeURIComponent(message);
-      const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMsg}`;
+      const orderId = crypto.randomUUID();
 
-      try {
-        // Save order to Supabase FIRST
-        const orderItems = cartItems.map(item => ({
-          product_id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          size: item.size || null,
-          color: item.color || null,
-        }));
+      const orderItems = cartItems.map(item => ({
+        product_id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        size: item.size || null,
+        color: item.color || null,
+      }));
 
-        const { error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            user_id: user?.id || null,
-            customer_name: values.full_name,
-            customer_phone: normalizedPhone,
-            customer_address: values.address,
-            customer_city: values.city,
-            customer_note: values.note || null,
-            delivery_method: deliveryOption.label,
-            items: orderItems,
-            total_amount: grandTotal,
-            status: 'pending',
-          });
+      const { error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          id: orderId,
+          user_id: isGuest ? null : user?.id,
+          customer_name: values.full_name,
+          customer_phone: normalizedPhone,
+          customer_address: values.address,
+          customer_city: values.city,
+          customer_note: values.note || null,
+          delivery_method: deliveryOption.label,
+          items: orderItems,
+          total_amount: grandTotal,
+          status: 'pending',
+        });
 
-        if (orderError) {
-          console.error('Supabase order error:', orderError);
-          throw orderError;
-        }
-
-        // Clear cart and show success
-        clearCart();
-        setShowSuccess(true);
-
-        // Open WhatsApp
-        window.open(waUrl, '_blank');
-        
-        // Navigate to shop after delay
-        setTimeout(() => navigate('/shop'), 3000);
-      } catch (error) {
-        console.error('Checkout error:', error);
-        alert('Something went wrong. Please try again.');
-      } finally {
-        setIsSubmitting(false);
+      if (orderError) {
+        console.error('Supabase order error:', orderError);
+        throw orderError;
       }
-    },
-  });
+
+      // Insert into order_items table for tracking sales stats
+      const orderItemsForDb = cartItems.map(item => ({
+        order_id: orderId,
+        product_id: item.id,
+        quantity: item.quantity,
+        price_at_order: item.price,
+      }));
+
+      const { error: orderItemsError } = await supabase
+        .from('order_items')
+        .insert(orderItemsForDb);
+
+      if (orderItemsError) {
+        console.error('Supabase order_items error:', orderItemsError);
+        // Don't throw here as the main order is already created
+      }
+
+      console.log('Order created with ID:', orderId);
+
+      const messageWithId = [
+        ...message.split('\n'),
+        ``,
+        `*Order ID:* ${orderId}`,
+      ].join('\n');
+
+      clearCart();
+      setShowSuccess(true);
+      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(messageWithId)}`, '_blank');
+      setTimeout(() => navigate('/shop'), 3000);
+    }
+  })
 
   // Calculate delivery charge for display
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const selectedDelivery = DELIVERY_OPTIONS.find((d) => d.id === formik.values.delivery) || DELIVERY_OPTIONS[0];
+  const selectedDelivery = availableDeliveryOptions.find((d) => d.id === formik.values.delivery) || availableDeliveryOptions[0];
   const baseDeliveryCharge = calculateDeliveryCharge(totalItems);
-  const deliveryCharge = baseDeliveryCharge + (selectedDelivery.extraCharge || 0);
+  const deliveryCharge = baseDeliveryCharge + (selectedDelivery?.extraCharge || 0);
   const grandTotal = cartTotal + deliveryCharge;
 
   const fErr = (f: keyof CheckoutFormValues): string =>
@@ -251,8 +309,7 @@ const Checkout = () => {
       : '';
 
   const inputCls = (f: keyof CheckoutFormValues) =>
-    `w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-logo-rose/15 transition-all ${
-      fErr(f) ? 'border-red-400' : 'border-logo-rose/20 focus:border-logo-rose'
+    `w-full px-4 py-3 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-logo-rose/15 transition-all ${fErr(f) ? 'border-red-400' : 'border-logo-rose/20 focus:border-logo-rose'
     }`;
 
   if (cartItems.length === 0 && !showSuccess) {
@@ -268,7 +325,7 @@ const Checkout = () => {
   }
 
   return (
-    <div className="bg-bg-silk-glow min-h-screen pb-24 font-sans">
+    <div className="bg-bg-silk-glow min-h-screen pb-5 font-sans">
       {/* Success overlay */}
       <AnimatePresence>
         {showSuccess && (
@@ -368,20 +425,18 @@ const Checkout = () => {
                 Delivery Method
               </h2>
               <div className="space-y-3">
-                {DELIVERY_OPTIONS.map((opt) => {
+                {availableDeliveryOptions.map((opt) => {
                   const optionCharge = baseDeliveryCharge + (opt.extraCharge || 0);
                   return (
                     <button key={opt.id} type="button"
                       onClick={() => formik.setFieldValue('delivery', opt.id)}
-                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                        formik.values.delivery === opt.id
+                      className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${formik.values.delivery === opt.id
                           ? 'border-action-bordeaux bg-action-bordeaux/5'
                           : 'border-logo-rose/15 hover:border-logo-rose/40'
-                      }`}
+                        }`}
                     >
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        formik.values.delivery === opt.id ? 'border-action-bordeaux' : 'border-logo-rose/30'
-                      }`}>
+                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${formik.values.delivery === opt.id ? 'border-action-bordeaux' : 'border-logo-rose/30'
+                        }`}>
                         {formik.values.delivery === opt.id && (
                           <div className="w-2.5 h-2.5 rounded-full bg-action-bordeaux" />
                         )}
@@ -465,6 +520,40 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+
+      {/* Error Modal */}
+      <AnimatePresence>
+        {showError && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-500 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="bg-white rounded-3xl p-6 md:p-8 max-w-sm mx-4 shadow-2xl text-center"
+            >
+              <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FiAlertCircle className="text-3xl text-red-500" />
+              </div>
+              <h2 className="font-serif text-xl md:text-2xl text-logo-black mb-2">Order Failed</h2>
+              <p className="font-sans text-sm text-logo-black/60 mb-6">
+                Something went wrong while placing your order. Please check your connection and try again.
+              </p>
+              <button
+                onClick={() => setShowError(false)}
+                className="w-full py-3 bg-action-bordeaux hover:bg-[#460416] text-white rounded-xl font-sans font-semibold text-sm transition-all cursor-pointer"
+              >
+                Try Again
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

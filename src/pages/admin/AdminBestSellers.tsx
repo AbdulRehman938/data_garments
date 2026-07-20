@@ -13,6 +13,8 @@ interface Product {
   price: number;
   image_url: string | null;
   order_count: number;
+  average_rating: number;
+  review_count: number;
 }
 
 const AdminBestSellers = () => {
@@ -44,18 +46,52 @@ const AdminBestSellers = () => {
         } catch { /* ignore */ }
       }
 
-      // Fetch all products (sorted by name, order counts are optional for now)
+      // Fetch all products
       const { data: prods } = await supabase
         .from('products')
         .select('id, name, price, image_url')
         .order('name', { ascending: true });
 
-      const countMap: Record<string, number> = {};
+      // Fetch order counts
+      const { data: orderItems } = await supabase
+        .from('order_items')
+        .select('product_id');
 
-      const withCounts: Product[] = (prods || []).map((p) => ({
-        ...p,
-        order_count: countMap[p.id] || 0,
-      })).sort((a, b) => b.order_count - a.order_count);
+      const orderCountMap: Record<string, number> = {};
+      orderItems?.forEach((item: any) => {
+        orderCountMap[item.product_id] = (orderCountMap[item.product_id] || 0) + 1;
+      });
+
+      // Fetch reviews for ratings
+      const { data: reviews } = await supabase
+        .from('reviews')
+        .select('product_id, rating');
+
+      const ratingMap: Record<string, { total: number; count: number }> = {};
+      reviews?.forEach((review: any) => {
+        if (!ratingMap[review.product_id]) {
+          ratingMap[review.product_id] = { total: 0, count: 0 };
+        }
+        ratingMap[review.product_id].total += review.rating;
+        ratingMap[review.product_id].count += 1;
+      });
+
+      const withCounts: Product[] = (prods || []).map((p) => {
+        const ratingData = ratingMap[p.id] || { total: 0, count: 0 };
+        const averageRating = ratingData.count > 0 ? ratingData.total / ratingData.count : 0;
+        
+        return {
+          ...p,
+          order_count: orderCountMap[p.id] || 0,
+          average_rating: Math.round(averageRating * 10) / 10, // Round to 1 decimal
+          review_count: ratingData.count,
+        };
+      }).sort((a, b) => {
+        // Sort by combined score: order count + (average rating * 2)
+        const scoreA = a.order_count + (a.average_rating * 2);
+        const scoreB = b.order_count + (b.average_rating * 2);
+        return scoreB - scoreA;
+      });
 
       setProducts(withCounts);
     } catch (err) {
@@ -128,7 +164,8 @@ const AdminBestSellers = () => {
           <div className="text-sm text-logo-black/70 space-y-1">
             <p><strong>How it works:</strong> The homepage shows up to <strong>{MAX_SLOTS} Best Seller</strong> product cards.</p>
             <p>You have <strong>{pinnedIds.length} pinned</strong> product{pinnedIds.length !== 1 ? 's' : ''} — these always appear first regardless of order count.</p>
-            <p>The remaining <strong>{autoCount} slot{autoCount !== 1 ? 's' : ''}</strong> auto-fill with the top-ordered products.</p>
+            <p>The remaining <strong>{autoCount} slot{autoCount !== 1 ? 's' : ''}</strong> auto-fill with the top products based on a combined score of order count and average rating.</p>
+            <p className="text-xs text-logo-black/50">Formula: Score = Order Count + (Average Rating × 2)</p>
           </div>
         </div>
       </div>
@@ -166,6 +203,12 @@ const AdminBestSellers = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-logo-black truncate">{product.name}</p>
                     <p className="text-xs text-logo-black/50">PKR {product.price.toLocaleString()} · {product.order_count} orders</p>
+                    {product.review_count > 0 && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <FiStar size={10} className="text-yellow-400 fill-yellow-400" />
+                        <span className="text-xs text-logo-black/60">{product.average_rating} ({product.review_count} reviews)</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Badges */}

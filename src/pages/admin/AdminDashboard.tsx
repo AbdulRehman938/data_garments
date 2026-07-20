@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect, react-refresh/only-export-components */
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiUsers, FiShoppingBag, FiDollarSign, FiBox, FiTrendingUp,
   FiLogOut, FiSettings, FiMenu, FiUploadCloud, FiShield,
-  FiClipboard, FiAward, FiAlertTriangle,
+  FiClipboard, FiAward, FiAlertTriangle, FiCalendar, FiStar,
 } from 'react-icons/fi';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -13,7 +13,7 @@ import { getCache, setCache } from '../../utils/db';
 import ScrollToTop from '../../components/common/ScrollToTop';
 import { Skeleton, SkeletonCard } from '../../components/common/Skeleton';
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area,
+  LineChart, Line, PieChart, Pie, Cell, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 
@@ -35,10 +35,6 @@ interface MonthlyData {
   orders: number;
 }
 
-interface CategoryProductCount {
-  name: string;
-  products: number;
-}
 const STATUS_COLORS: Record<string, string> = {
   pending: '#FFBB28',
   confirmed: '#0088FE',
@@ -55,6 +51,11 @@ const AdminDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [lowStockThresholds, setLowStockThresholds] = useState<Record<string, number>>({});
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<'year' | 'month' | 'date'>('year');
+  const [showYearDropdown, setShowYearDropdown] = useState(false);
+  const [showMonthDropdown, setShowMonthDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -67,12 +68,15 @@ const AdminDashboard = () => {
   const [lowStock, setLowStock] = useState<LowStockProduct[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [statusData, setStatusData] = useState<OrderStatusData[]>([]);
-  const [categoryData, setCategoryData] = useState<CategoryProductCount[]>([]);
+  const [topSellingProducts, setTopSellingProducts] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user) return;
-    if (user.role !== 'Admin') navigate('/');
-  }, [user, navigate]);
+    if (user.role !== 'Admin') {
+      logout();
+      navigate('/login');
+    }
+  }, [user, navigate, logout]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -85,7 +89,7 @@ const AdminDashboard = () => {
       setIsLoading(false);
     };
     loadData();
-  }, [selectedYear]);
+  }, [selectedYear, selectedMonth, selectedDate, filterType]);
 
   const fetchLowStockThresholds = async () => {
     const cacheKey = 'low-stock-thresholds';
@@ -120,7 +124,7 @@ const AdminDashboard = () => {
   };
 
   const fetchStats = async () => {
-    const cacheKey = 'dashboard-stats';
+    const cacheKey = `dashboard-stats-${filterType}-${selectedYear}-${selectedMonth}-${selectedDate}`;
     try {
       const cached = await getCache(cacheKey);
       if (cached) {
@@ -128,13 +132,36 @@ const AdminDashboard = () => {
         return;
       }
       
-      const [usersRes, productsRes, categoriesRes, ordersRes, pendingRes, revenueRes] = await Promise.all([
-        supabase.from('users').select('*', { count: 'exact', head: true }),
-        supabase.from('products').select('*', { count: 'exact', head: true }),
-        supabase.from('categories').select('*', { count: 'exact', head: true }).not('name', 'ilike', '__SYSTEM_%'),
-        supabase.from('orders').select('*', { count: 'exact', head: true }),
-        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('orders').select('total_amount').not('status', 'eq', 'cancelled'),
+      let dateFilter: any = {};
+      if (filterType === 'year') {
+        dateFilter = {
+          gte: `${selectedYear}-01-01T00:00:00.000Z`,
+          lte: `${selectedYear}-12-31T23:59:59.999Z`,
+        };
+      } else if (filterType === 'month') {
+        const month = selectedMonth !== null ? selectedMonth : new Date().getMonth();
+        const year = selectedYear;
+        const monthNum = month + 1;
+        const lastDay = new Date(year, monthNum, 0).getDate();
+        dateFilter = {
+          gte: `${year}-${String(monthNum).padStart(2, '0')}-01T00:00:00.000Z`,
+          lte: `${year}-${String(monthNum).padStart(2, '0')}-${lastDay}T23:59:59.999Z`,
+        };
+      } else if (filterType === 'date') {
+        const dateToUse = selectedDate || new Date().toISOString().split('T')[0];
+        const dateObj = new Date(dateToUse);
+        const startOfDay = new Date(dateObj.setHours(0, 0, 0, 0)).toISOString();
+        const endOfDay = new Date(dateObj.setHours(23, 59, 59, 999)).toISOString();
+        dateFilter = {
+          gte: startOfDay,
+          lte: endOfDay,
+        };
+      }
+      
+      const [ordersRes, pendingRes, revenueRes] = await Promise.all([
+        supabase.from('orders').select('*', { count: 'exact', head: true }).gte('created_at', dateFilter.gte).lte('created_at', dateFilter.lte),
+        supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', 'pending').gte('created_at', dateFilter.gte).lte('created_at', dateFilter.lte),
+        supabase.from('orders').select('total_amount').not('status', 'eq', 'cancelled').gte('created_at', dateFilter.gte).lte('created_at', dateFilter.lte),
       ]);
 
       const totalRevenue = (revenueRes.data || []).reduce(
@@ -142,9 +169,9 @@ const AdminDashboard = () => {
       );
 
       const newStats = {
-        totalUsers: usersRes.count || 0,
-        totalProducts: productsRes.count || 0,
-        totalCategories: categoriesRes.count || 0,
+        totalUsers: 0,
+        totalProducts: 0,
+        totalCategories: 0,
         totalRevenue,
         totalOrders: ordersRes.count || 0,
         pendingOrders: pendingRes.count || 0,
@@ -188,43 +215,83 @@ const AdminDashboard = () => {
   };
 
   const fetchChartData = async () => {
-    const cacheKey = `dashboard-charts-${selectedYear}`;
+    const cacheKey = `dashboard-charts-${filterType}-${selectedYear}-${selectedMonth}-${selectedDate}`;
     try {
       const cached = await getCache(cacheKey);
       if (cached) {
         setMonthlyData(cached.monthlyData);
         setStatusData(cached.statusData);
-        setCategoryData(cached.categoryData);
+        setTopSellingProducts(cached.topSellingProducts || []);
         return;
       }
       
-      // Fetch orders for the selected year (optimized: only select needed fields)
-      const yearStart = `${selectedYear}-01-01T00:00:00.000Z`;
-      const yearEnd = `${selectedYear}-12-31T23:59:59.999Z`;
+      let dateFilter: any = {};
+      if (filterType === 'year') {
+        dateFilter = {
+          gte: `${selectedYear}-01-01T00:00:00.000Z`,
+          lte: `${selectedYear}-12-31T23:59:59.999Z`,
+        };
+      } else if (filterType === 'month') {
+        const month = selectedMonth !== null ? selectedMonth : new Date().getMonth();
+        const year = selectedYear;
+        const monthNum = month + 1;
+        const lastDay = new Date(year, monthNum, 0).getDate();
+        dateFilter = {
+          gte: `${year}-${String(monthNum).padStart(2, '0')}-01T00:00:00.000Z`,
+          lte: `${year}-${String(monthNum).padStart(2, '0')}-${lastDay}T23:59:59.999Z`,
+        };
+      } else if (filterType === 'date') {
+        const dateToUse = selectedDate || new Date().toISOString().split('T')[0];
+        const dateObj = new Date(dateToUse);
+        const startOfDay = new Date(dateObj.setHours(0, 0, 0, 0)).toISOString();
+        const endOfDay = new Date(dateObj.setHours(23, 59, 59, 999)).toISOString();
+        dateFilter = {
+          gte: startOfDay,
+          lte: endOfDay,
+        };
+      }
       
-      const [ordersData, categoriesData, statusCount] = await Promise.all([
+      const [ordersData, statusCount, topProducts] = await Promise.all([
         supabase
           .from('orders')
           .select('total_amount, status, created_at')
-          .gte('created_at', yearStart)
-          .lte('created_at', yearEnd)
+          .gte('created_at', dateFilter.gte)
+          .lte('created_at', dateFilter.lte)
           .not('status', 'eq', 'cancelled'),
+          
+        supabase.from('orders').select('status').gte('created_at', dateFilter.gte).lte('created_at', dateFilter.lte),
         
         supabase
-          .from('categories')
-          .select('id, name')
-          .not('name', 'ilike', '__SYSTEM_%'),
-          
-        supabase.from('orders').select('status')
+          .from('order_items')
+          .select('quantity, product_id, products!inner(name), orders!inner(created_at)')
+          .gte('orders.created_at', dateFilter.gte)
+          .lte('orders.created_at', dateFilter.lte),
       ]);
 
       // Process monthly data
-      const monthly = MONTHS.map(name => ({ name, revenue: 0, orders: 0 }));
-      (ordersData.data || []).forEach((order: any) => {
-        const monthIdx = new Date(order.created_at).getMonth();
-        monthly[monthIdx].revenue += order.total_amount || 0;
-        monthly[monthIdx].orders += 1;
-      });
+      let monthly = MONTHS.map(name => ({ name, revenue: 0, orders: 0 }));
+      if (filterType === 'year') {
+        (ordersData.data || []).forEach((order: any) => {
+          const monthIdx = new Date(order.created_at).getMonth();
+          monthly[monthIdx].revenue += order.total_amount || 0;
+          monthly[monthIdx].orders += 1;
+        });
+      } else if (filterType === 'month') {
+        const month = selectedMonth !== null ? selectedMonth : new Date().getMonth();
+        const daysInMonth = new Date(selectedYear, month + 1, 0).getDate();
+        monthly = Array.from({ length: daysInMonth }, (_, i) => ({ 
+          name: `Day ${i + 1}`, 
+          revenue: 0, 
+          orders: 0 
+        }));
+        (ordersData.data || []).forEach((order: any) => {
+          const dayIdx = new Date(order.created_at).getDate() - 1;
+          if (dayIdx >= 0 && dayIdx < daysInMonth) {
+            monthly[dayIdx].revenue += order.total_amount || 0;
+            monthly[dayIdx].orders += 1;
+          }
+        });
+      }
       setMonthlyData(monthly);
 
       // Process order status data
@@ -239,19 +306,24 @@ const AdminDashboard = () => {
       }));
       setStatusData(statusArray);
 
-      // Process category product counts (optimized with count)
-      const categoryCounts: CategoryProductCount[] = [];
-      for (const cat of categoriesData.data || []) {
-        const { count } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true })
-          .eq('category_id', cat.id);
-        categoryCounts.push({ name: cat.name, products: count || 0 });
-      }
-      const sortedCategories = categoryCounts.sort((a, b) => b.products - a.products).slice(0, 10);
-      setCategoryData(sortedCategories);
+      // Process top selling products
+      const productSales: Record<string, { name: string; quantity: number; revenue: number }> = {};
+      (topProducts.data || []).forEach((item: any) => {
+        const productId = item.product_id;
+        const productName = item.products?.name || 'Unknown';
+        if (!productSales[productId]) {
+          productSales[productId] = { name: productName, quantity: 0, revenue: 0 };
+        }
+        productSales[productId].quantity += item.quantity || 0;
+      });
       
-      await setCache(cacheKey, { monthlyData: monthly, statusData: statusArray, categoryData: sortedCategories });
+      const topSellingArray = Object.values(productSales)
+        .map(p => ({ ...p, revenue: p.quantity * 100 })) // Simplified revenue calculation
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 10);
+      setTopSellingProducts(topSellingArray);
+      
+      await setCache(cacheKey, { monthlyData: monthly, statusData: statusArray, topSellingProducts: topSellingArray });
     } catch (err) {
       console.error('Chart data error:', err);
     }
@@ -259,16 +331,29 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => { await logout(); navigate('/login'); };
 
+  const handleResetFilters = () => {
+    setSelectedYear(new Date().getFullYear());
+    setSelectedMonth(null);
+    setSelectedDate(null);
+    setFilterType('year');
+  };
+
+  const handleFilterTypeChange = (type: 'year' | 'month' | 'date') => {
+    setFilterType(type);
+    setSelectedMonth(null);
+    setSelectedDate(null);
+  };
+
   const navItems = [
     { name: 'Dashboard',        path: '/admin/dashboard',      icon: FiTrendingUp },
     { name: 'Orders',           path: '/admin/orders',         icon: FiClipboard },
+    { name: 'Reviews',          path: '/admin/reviews',        icon: FiStar },
     { name: 'Categories',       path: '/admin/categories',     icon: FiBox },
     { name: 'Products',         path: '/admin/products',       icon: FiShoppingBag },
     { name: 'Best Sellers',     path: '/admin/best-sellers',   icon: FiAward },
     { name: 'Service Badges',   path: '/admin/services',       icon: FiShield },
     { name: 'Bulk Upload',      path: '/admin/bulk-upload',    icon: FiUploadCloud },
     { name: 'Customers',        path: '/admin/users',          icon: FiUsers },
-    { name: 'Sales & Revenue',  path: '/admin/sales',          icon: FiDollarSign },
     { name: 'Profile Settings', path: '/admin/profile-settings', icon: FiSettings },
   ];
 
@@ -342,9 +427,13 @@ const AdminDashboard = () => {
                   <span className="sm:hidden">Home</span>
                 </Link>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-action-bordeaux rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
-                    {user?.username?.charAt(0)?.toUpperCase() || 'A'}
-                  </div>
+                  {user?.profilePicUrl ? (
+                    <img src={user.profilePicUrl} alt={user.username} className="w-10 h-10 rounded-full object-cover shadow-md border-2 border-logo-rose/20" />
+                  ) : (
+                    <div className="w-10 h-10 bg-action-bordeaux rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
+                      {user?.username?.charAt(0)?.toUpperCase() || 'A'}
+                    </div>
+                  )}
                   <div className="hidden sm:block">
                     <p className="font-semibold text-logo-black text-sm">{user?.username}</p>
                     <p className="text-xs text-logo-black/50">{user?.role}</p>
@@ -357,20 +446,224 @@ const AdminDashboard = () => {
 
         <main className="p-4 md:p-6">
           {isDashboard ? (
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                {isLoading ? <Skeleton className="h-10 w-72 rounded-xl" /> : (
-                  <h1 className="font-serif text-2xl md:text-3xl text-logo-black">Dashboard Overview</h1>
-                )}
-                <select
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="px-3 py-2 text-sm border border-logo-rose/20 rounded-xl focus:outline-none focus:border-logo-rose"
-                >
-                  {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Filter Controls */}
+              <div className="bg-white rounded-2xl border border-logo-rose/20 shadow-sm p-6 mb-6">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-logo-black">Filter by:</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleFilterTypeChange('year')}
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                          filterType === 'year' 
+                            ? 'bg-action-bordeaux text-white' 
+                            : 'bg-bg-silk-glow text-logo-black hover:bg-logo-rose/10'
+                        }`}
+                      >
+                        Year
+                      </button>
+                      <button
+                        onClick={() => handleFilterTypeChange('month')}
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                          filterType === 'month' 
+                            ? 'bg-action-bordeaux text-white' 
+                            : 'bg-bg-silk-glow text-logo-black hover:bg-logo-rose/10'
+                        }`}
+                      >
+                        Month
+                      </button>
+                      <button
+                        onClick={() => handleFilterTypeChange('date')}
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                          filterType === 'date' 
+                            ? 'bg-action-bordeaux text-white' 
+                            : 'bg-bg-silk-glow text-logo-black hover:bg-logo-rose/10'
+                        }`}
+                      >
+                        Date
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="h-6 w-px bg-logo-rose/20 hidden sm:block"></div>
+
+                  {filterType === 'year' && (
+                    <div className="relative inline-block">
+                      <div
+                        onClick={() => setShowYearDropdown(!showYearDropdown)}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-logo-rose/20 rounded-xl cursor-pointer hover:bg-logo-rose/5 transition-all shadow-sm"
+                      >
+                        <FiCalendar size={18} className="text-logo-rose" />
+                        <span className="font-medium text-logo-black">{selectedYear}</span>
+                        <motion.svg
+                          animate={{ rotate: showYearDropdown ? 180 : 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="w-4 h-4 text-logo-rose"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </motion.svg>
+                      </div>
+
+                      <AnimatePresence>
+                        {showYearDropdown && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute top-full left-0 mt-2 w-48 bg-white border border-logo-rose/20 rounded-xl shadow-lg z-50 overflow-hidden"
+                          >
+                            {[...Array(6)].map((_, index) => {
+                              const year = currentYear - index;
+                              return (
+                                <div
+                                  key={year}
+                                  onClick={() => {
+                                    setSelectedYear(year);
+                                    setShowYearDropdown(false);
+                                  }}
+                                  className={`px-4 py-3 cursor-pointer transition-all hover:bg-logo-rose/10 ${selectedYear === year ? 'bg-logo-rose/20 text-action-bordeaux font-semibold' : 'text-logo-black'}`}
+                                >
+                                  {year}
+                                </div>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  )}
+
+                  {filterType === 'month' && (
+                    <div className="flex items-center gap-2">
+                      <div className="relative inline-block">
+                        <div
+                          onClick={() => setShowYearDropdown(!showYearDropdown)}
+                          className="flex items-center gap-2 px-4 py-2 bg-white border border-logo-rose/20 rounded-xl cursor-pointer hover:bg-logo-rose/5 transition-all shadow-sm"
+                        >
+                          <FiCalendar size={18} className="text-logo-rose" />
+                          <span className="font-medium text-logo-black">{selectedYear}</span>
+                          <motion.svg
+                            animate={{ rotate: showYearDropdown ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="w-4 h-4 text-logo-rose"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </motion.svg>
+                        </div>
+
+                        <AnimatePresence>
+                          {showYearDropdown && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              transition={{ duration: 0.2 }}
+                              className="absolute top-full left-0 mt-2 w-48 bg-white border border-logo-rose/20 rounded-xl shadow-lg z-50 overflow-hidden"
+                            >
+                              {[...Array(6)].map((_, index) => {
+                                const year = currentYear - index;
+                                return (
+                                  <div
+                                    key={year}
+                                    onClick={() => {
+                                      setSelectedYear(year);
+                                      setShowYearDropdown(false);
+                                    }}
+                                    className={`px-4 py-3 cursor-pointer transition-all hover:bg-logo-rose/10 ${selectedYear === year ? 'bg-logo-rose/20 text-action-bordeaux font-semibold' : 'text-logo-black'}`}
+                                  >
+                                    {year}
+                                  </div>
+                                );
+                              })}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      <div className="relative inline-block">
+                        <div
+                          onClick={() => setShowMonthDropdown(!showMonthDropdown)}
+                          className="flex items-center gap-2 px-4 py-2 bg-white border border-logo-rose/20 rounded-xl cursor-pointer hover:bg-logo-rose/5 transition-all shadow-sm"
+                        >
+                          <FiCalendar size={18} className="text-logo-rose" />
+                          <span className="font-medium text-logo-black">{selectedMonth !== null ? MONTHS[selectedMonth] : 'Select Month'}</span>
+                          <motion.svg
+                            animate={{ rotate: showMonthDropdown ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="w-4 h-4 text-logo-rose"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </motion.svg>
+                        </div>
+
+                        <AnimatePresence>
+                          {showMonthDropdown && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              transition={{ duration: 0.2 }}
+                              className="absolute top-full left-0 mt-2 w-48 bg-white border border-logo-rose/20 rounded-xl shadow-lg z-50 overflow-hidden max-h-64 overflow-y-auto"
+                            >
+                              {MONTHS.map((month, index) => (
+                                <div
+                                  key={month}
+                                  onClick={() => {
+                                    setSelectedMonth(index);
+                                    setShowMonthDropdown(false);
+                                  }}
+                                  className={`px-4 py-3 cursor-pointer transition-all hover:bg-logo-rose/10 ${selectedMonth === index ? 'bg-logo-rose/20 text-action-bordeaux font-semibold' : 'text-logo-black'}`}
+                                >
+                                  {month}
+                                </div>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </div>
+                  )}
+
+                  {filterType === 'date' && (
+                    <div className="relative inline-block">
+                      <div className="flex items-center gap-2 px-4 py-2 bg-white border border-logo-rose/20 rounded-xl shadow-sm">
+                        <FiCalendar size={18} className="text-logo-rose" />
+                        <input
+                          type="date"
+                          value={selectedDate || ''}
+                          onChange={(e) => setSelectedDate(e.target.value)}
+                          max={new Date().toISOString().split('T')[0]}
+                          className="border-none focus:outline-none text-logo-black font-medium bg-transparent cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="ml-auto">
+                    <button
+                      onClick={handleResetFilters}
+                      className="flex items-center gap-2 px-4 py-2 bg-logo-rose/10 text-logo-rose rounded-xl hover:bg-logo-rose/20 transition-all font-medium text-sm"
+                    >
+                      <FiCalendar size={16} />
+                      Reset to Current Year
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* Stats grid */}
@@ -379,11 +672,14 @@ const AdminDashboard = () => {
                   Array.from({ length: 6 }).map((_, i) => (
                     <SkeletonCard key={i} />
                   ))
+                ) : stats.totalOrders === 0 && stats.totalRevenue === 0 ? (
+                  <div className="col-span-full bg-white rounded-2xl border border-logo-rose/20 shadow-sm p-12 text-center">
+                    <FiCalendar size={48} className="text-logo-rose/30 mx-auto mb-4" />
+                    <h3 className="font-serif text-lg text-logo-black mb-2">No Data Available</h3>
+                    <p className="text-logo-black/50 text-sm">There are no orders or revenue for the selected period.</p>
+                  </div>
                 ) : (
                   <>
-                    <StatCard title="Total Users"     value={stats.totalUsers}     icon={FiUsers}       color="bg-pop-orchid" />
-                    <StatCard title="Products"        value={stats.totalProducts}  icon={FiShoppingBag} color="bg-energy-apricot" />
-                    <StatCard title="Categories"      value={stats.totalCategories} icon={FiBox}         color="bg-logo-rose" />
                     <StatCard title="Total Orders"    value={stats.totalOrders}    icon={FiClipboard}   color="bg-action-bordeaux" />
                     <StatCard title="Pending Orders"  value={stats.pendingOrders}  icon={FiAlertTriangle} color="bg-amber-500" highlight={stats.pendingOrders > 0} />
                     <StatCard title="Total Revenue"   value={`PKR ${stats.totalRevenue.toLocaleString()}`} icon={FiDollarSign} color="bg-emerald-600" />
@@ -458,7 +754,9 @@ const AdminDashboard = () => {
                   <>
                     {/* Monthly Orders - Line Chart */}
                     <div className="bg-white rounded-2xl border border-logo-rose/20 shadow-sm p-6">
-                      <h2 className="font-serif text-xl text-logo-black mb-6">Monthly Orders</h2>
+                      <h2 className="font-serif text-xl text-logo-black mb-6">
+                        {filterType === 'year' ? 'Monthly Orders' : filterType === 'month' ? 'Daily Orders' : 'Orders'}
+                      </h2>
                       <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={monthlyData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
@@ -473,21 +771,33 @@ const AdminDashboard = () => {
                       </ResponsiveContainer>
                     </div>
 
-                    {/* Categories by Products - Bar Chart */}
+                    {/* Top Selling Products */}
                     <div className="bg-white rounded-2xl border border-logo-rose/20 shadow-sm p-6">
-                      <h2 className="font-serif text-xl text-logo-black mb-6">Top Categories</h2>
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={categoryData} layout="vertical">
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                          <XAxis type="number" tick={{ fontSize: 12, fill: '#6b7280' }} />
-                          <YAxis dataKey="name" type="category" tick={{ fontSize: 12, fill: '#6b7280' }} width={100} />
-                          <Tooltip 
-                            formatter={(value) => [value, 'Products']}
-                            contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                          />
-                          <Bar dataKey="products" fill="#f97316" radius={[0, 4, 4, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
+                      <h2 className="font-serif text-xl text-logo-black mb-6">Top Selling Products</h2>
+                      {topSellingProducts.length === 0 ? (
+                        <div className="flex items-center justify-center h-[300px] text-logo-black/50">
+                          <p className="text-sm">No sales data available for this period</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3 max-h-[300px] overflow-y-auto">
+                          {topSellingProducts.map((product, index) => (
+                            <div key={index} className="flex items-center gap-3 p-3 bg-bg-silk-glow rounded-xl">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                                index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-amber-600' : 'bg-logo-rose/50'
+                              }`}>
+                                {index + 1}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-logo-black truncate">{product.name}</p>
+                                <p className="text-xs text-logo-black/50">{product.quantity} sold</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-action-bordeaux text-sm">PKR {product.revenue.toLocaleString()}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </>
                 )}
