@@ -101,20 +101,20 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* WhatsApp Community CTA */}
+          {/* WhatsApp Contact CTA */}
           <div className="col-span-2 md:col-span-1 flex flex-col gap-4">
-            <h3 className="font-serif font-semibold text-lg text-logo-black">Join Our Community</h3>
+            <h3 className="font-serif font-semibold text-lg text-logo-black">Contact Us</h3>
             <p className="font-sans text-sm text-logo-black/85 leading-relaxed">
-              Become part of our exclusive WhatsApp community. Get early access to new collections, drops, and VIP sales.
+              Have questions or need assistance? Reach out to us directly on WhatsApp for quick support and inquiries.
             </p>
             <a
-              href="https://chat.whatsapp.com/BUPu8pemtrj82Te1NWax0W"
+              href="https://wa.me/923167797719"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-[#25D366] hover:bg-[#20ba5a] text-white rounded-full font-sans font-medium text-sm transition-all duration-300 transform hover:scale-[1.03] active:scale-[0.98] shadow-md cursor-pointer"
             >
               <FaWhatsapp size={18} />
-              WhatsApp Community
+              Chat on WhatsApp
             </a>
           </div>
         </div>

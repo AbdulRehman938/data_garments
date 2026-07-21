@@ -483,50 +483,52 @@ const Shop = () => {
                       </div>
 
                       {/* Info */}
-                      <div className="p-3 flex items-end justify-between gap-2">
+                      <div className="p-3 flex flex-col gap-2">
                         <div className="min-w-0">
                           <h3 className="font-serif text-sm font-semibold text-logo-black line-clamp-1 group-hover:text-action-bordeaux transition-colors">
                             {product.name}
                           </h3>
-                          <div className="flex items-center gap-2 mt-1">
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-sans font-bold text-action-bordeaux text-sm">
                               PKR {product.price.toLocaleString()}
                             </span>
                             {product.original_price && (
                               <>
-                                <span className="font-sans text-sm text-logo-black/40 line-through">
+                                <span className="font-sans text-xs text-logo-black/40 line-through">
                                   PKR {product.original_price.toLocaleString()}
                                 </span>
-                                <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                                <span className="bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                                   {Math.round(((product.original_price - product.price) / product.original_price) * 100)}% OFF
                                 </span>
                               </>
                             )}
                           </div>
+                          <button
+                            onClick={(e) => handleAddCart(product, e)}
+                            disabled={product.stock === 0}
+                            className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
+                              cartId === product.id
+                                ? 'bg-emerald-500 text-white border-emerald-500'
+                                : product.stock === 0
+                                ? 'bg-logo-black/5 text-logo-black/25 border-logo-rose/10 cursor-not-allowed'
+                                : 'text-action-bordeaux border-logo-rose/20 hover:bg-action-bordeaux hover:text-white hover:border-action-bordeaux hover:scale-105 active:scale-95'
+                            }`}
+                          >
+                            <AnimatePresence mode="wait">
+                              {cartId === product.id ? (
+                                <motion.div key="ok" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                                  <FiCheckCircle size={14} />
+                                </motion.div>
+                              ) : (
+                                <motion.div key="bag" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                                  <FiShoppingBag size={14} />
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </button>
                         </div>
-                        <button
-                          onClick={(e) => handleAddCart(product, e)}
-                          disabled={product.stock === 0}
-                          className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center border transition-all duration-200 cursor-pointer ${
-                            cartId === product.id
-                              ? 'bg-emerald-500 text-white border-emerald-500'
-                              : product.stock === 0
-                              ? 'bg-logo-black/5 text-logo-black/25 border-logo-rose/10 cursor-not-allowed'
-                              : 'text-action-bordeaux border-logo-rose/20 hover:bg-action-bordeaux hover:text-white hover:border-action-bordeaux hover:scale-105 active:scale-95'
-                          }`}
-                        >
-                          <AnimatePresence mode="wait">
-                            {cartId === product.id ? (
-                              <motion.div key="ok" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                                <FiCheckCircle size={14} />
-                              </motion.div>
-                            ) : (
-                              <motion.div key="bag" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                                <FiShoppingBag size={14} />
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </button>
                       </div>
                     </motion.div>
                   </Link>
@@ -603,7 +605,7 @@ const Shop = () => {
             <motion.div
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
               transition={{ ease: [0.16, 1, 0.3, 1] }}
-              className="fixed top-0 left-0 bottom-0 w-72 bg-white z-50 overflow-y-auto p-6 space-y-6 lg:hidden"
+              className="fixed top-0 left-0 bottom-0 w-96 bg-white z-50 overflow-y-auto p-6 space-y-6 lg:hidden"
             >
               <div className="flex items-center justify-between mb-2">
                 <h2 className="font-serif text-xl text-logo-black">Filters</h2>
